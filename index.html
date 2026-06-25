@@ -3,39 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CAGED Master - Interactive Guitar Educational Tool</title>
+    <title>CAGED Master & Rhythm - Educational Tool</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Backgrounds */
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
             --panel-bg: rgba(255, 255, 255, 0.05);
             --panel-border: rgba(255, 255, 255, 0.1);
-            
-            /* Typography */
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             
-            /* Fretboard Colors */
             --fretboard-bg: linear-gradient(to right, #3e2723, #1b0000);
             --fret-wire: #94a3b8;
             --fret-nut: #e2e8f0;
             --string-color: linear-gradient(to bottom, #e2e8f0, #94a3b8);
             --fret-dot: rgba(255, 255, 255, 0.2);
             
-            /* Piano Colors */
             --key-white-bg: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%);
             --key-black-bg: linear-gradient(to bottom, #334155 0%, #0f172a 100%);
             --key-text-white: #0f172a;
             --key-text-black: #f8fafc;
             
-            /* Note Colors (CAGED Intervals) */
-            --root-color: #ef4444;    /* Red for Root (1) */
-            --third-color: #3b82f6;   /* Blue for Major 3rd (3) */
-            --fifth-color: #f59e0b;   /* Yellow/Orange for Perfect 5th (5) */
+            --root-color: #ef4444; 
+            --third-color: #3b82f6; 
+            --fifth-color: #f59e0b; 
             --note-bg-inactive: rgba(255, 255, 255, 0.1);
             
-            /* UI Controls */
             --primary-btn: #4ade80;
             --primary-btn-text: #064e3b;
         }
@@ -65,181 +58,56 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
+        header { text-align: center; margin-bottom: 30px; }
         header h1 {
-            margin: 0 0 10px 0;
-            font-size: 2.8rem;
-            font-weight: 800;
+            margin: 0 0 10px 0; font-size: 2.8rem; font-weight: 800;
             background: linear-gradient(to right, #4ade80, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-
-        header p {
-            margin: 0;
-            color: var(--text-muted);
-            font-size: 1.1rem;
-        }
+        header p { margin: 0; color: var(--text-muted); font-size: 1.1rem; }
 
         /* TABS UI */
-        .tabs {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
+        .tabs { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
         .tab-btn {
-            background: transparent;
-            border: 2px solid var(--panel-border);
-            color: var(--text-muted);
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.3s;
+            background: transparent; border: 2px solid var(--panel-border);
+            color: var(--text-muted); padding: 10px 24px; border-radius: 8px;
+            font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: 0.3s;
         }
         .tab-btn:hover { border-color: var(--text-muted); color: var(--text-main); }
         .tab-btn.active-btn {
-            background: var(--primary-btn);
-            color: var(--primary-btn-text);
-            border-color: var(--primary-btn);
+            background: var(--primary-btn); color: var(--primary-btn-text); border-color: var(--primary-btn);
         }
-
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        @keyframes fadeIn { 
-            from { opacity: 0; transform: translateY(10px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-
-        /* --- CAGED MODE STYLES --- */
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-bottom: 40px;
-            flex-wrap: wrap;
-        }
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .control-group label {
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-        select {
-            appearance: none;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--panel-border);
-            color: var(--text-main);
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-family: 'Inter', sans-serif;
-            cursor: pointer;
-            outline: none;
-            transition: all 0.2s;
+        /* --- CAGED MODE --- */
+        .controls { display: flex; justify-content: center; gap: 40px; margin-bottom: 40px; flex-wrap: wrap; }
+        .control-group { display: flex; flex-direction: column; gap: 10px; }
+        .control-group label { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 600; }
+        select, input[type="range"] {
+            appearance: none; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border);
+            color: var(--text-main); padding: 12px; border-radius: 8px; font-size: 1.1rem;
+            cursor: pointer; outline: none; transition: 0.2s;
         }
         select:hover { border-color: rgba(255, 255, 255, 0.3); }
 
-        .shape-buttons {
-            display: flex;
-            gap: 8px;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 6px;
-            border-radius: 10px;
-            border: 1px solid var(--panel-border);
-        }
-        .shape-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-main);
-            padding: 8px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
+        .shape-buttons { display: flex; gap: 8px; background: rgba(0, 0, 0, 0.2); padding: 6px; border-radius: 10px; border: 1px solid var(--panel-border); }
+        .shape-btn { background: transparent; border: none; color: var(--text-main); padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: 0.2s; }
         .shape-btn:hover { background: rgba(255, 255, 255, 0.1); }
-        .shape-btn.active-btn {
-            background: var(--primary-btn);
-            color: var(--primary-btn-text);
-            box-shadow: 0 4px 10px rgba(74, 222, 128, 0.3);
-        }
+        .shape-btn.active-btn { background: var(--primary-btn); color: var(--primary-btn-text); box-shadow: 0 4px 10px rgba(74, 222, 128, 0.3); }
 
-        .fretboard-container {
-            position: relative;
-            margin-bottom: 60px;
-        }
-        .fretboard {
-            display: flex;
-            flex-direction: column;
-            background: var(--fretboard-bg);
-            border: 2px solid #555;
-            border-radius: 8px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-            position: relative;
-        }
-        .string-row {
-            display: flex;
-            height: 38px;
-            position: relative;
-        }
+        .fretboard-container { position: relative; margin-bottom: 60px; }
+        .fretboard { display: flex; flex-direction: column; background: var(--fretboard-bg); border: 2px solid #555; border-radius: 8px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); position: relative; }
+        .string-row { display: flex; height: 38px; position: relative; }
         .string-row::before {
-            content: '';
-            position: absolute;
-            left: 0; right: 0;
-            background: var(--string-color);
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 2;
-            height: var(--string-thickness, 2px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.6);
-            pointer-events: none;
+            content: ''; position: absolute; left: 0; right: 0; background: var(--string-color);
+            top: 50%; transform: translateY(-50%); z-index: 2; height: var(--string-thickness, 2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.6); pointer-events: none;
         }
-        .fret {
-            flex: 1;
-            border-right: 2px solid var(--fret-wire);
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.2) 100%);
-        }
-        .fret:first-child {
-            flex: 0.4;
-            border-right: 8px solid var(--fret-nut);
-            background: #111;
-        }
-        .note-marker {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: var(--note-bg-inactive);
-            color: transparent;
-            z-index: 3;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 11px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            opacity: 0;
-            border: 2px solid transparent;
-        }
+        .fret { flex: 1; border-right: 2px solid var(--fret-wire); position: relative; display: flex; justify-content: center; align-items: center; background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.2) 100%); }
+        .fret:first-child { flex: 0.4; border-right: 8px solid var(--fret-nut); background: #111; }
+        .note-marker { width: 32px; height: 32px; border-radius: 50%; background: var(--note-bg-inactive); color: transparent; z-index: 3; display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: 800; cursor: pointer; transition: all 0.2s; opacity: 0; }
         .fret:hover .note-marker { opacity: 0.5; color: rgba(255,255,255,0.7); }
         .note-marker.active { opacity: 1; color: #fff; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
         .fret:hover .note-marker.active { transform: scale(1.15); opacity: 1; }
@@ -247,213 +115,105 @@
         .note-marker.third, .key.active.third { background-color: var(--third-color); }
         .note-marker.fifth, .key.active.fifth { background-color: var(--fifth-color); }
         .key.active.root, .key.active.third, .key.active.fifth { color: #fff; border-color: rgba(255,255,255,0.4); }
-        .key.active.root .key-label, .key.active.third .key-label, .key.active.fifth .key-label { color: #fff; }
         .hover-sync { filter: brightness(1.4); transform: scale(1.15); z-index: 10; }
         .key.hover-sync { transform: scaleY(0.95); }
-        .key.active.hover-sync { filter: brightness(1.3); }
 
-        .fretboard-markers {
-            position: absolute;
-            top: 0; bottom: 0; left: 0; right: 0;
-            display: flex;
-            pointer-events: none;
-            z-index: 1;
-        }
+        .fretboard-markers { position: absolute; top: 0; bottom: 0; left: 0; right: 0; display: flex; pointer-events: none; z-index: 1; }
         .marker-fret { flex: 1; display: flex; justify-content: center; align-items: center; }
         .marker-fret:first-child { flex: 0.4; }
         .dot { width: 14px; height: 14px; background: var(--fret-dot); border-radius: 50%; }
 
-        .fret-numbers {
-            display: flex;
-            padding-top: 10px;
-            padding-bottom: 8px;
-        }
+        .fret-numbers { display: flex; padding-top: 10px; padding-bottom: 8px; }
         .fret-number { flex: 1; text-align: center; font-size: 13px; color: var(--text-muted); font-weight: 600; }
         .fret-number:first-child { flex: 0.4; }
 
-        .piano-container {
-            display: flex;
-            justify-content: center;
-            padding: 20px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 12px;
-            overflow-x: auto;
-            border: 1px solid var(--panel-border);
-        }
+        .piano-container { display: flex; justify-content: center; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 12px; overflow-x: auto; border: 1px solid var(--panel-border); }
         .piano { display: flex; height: 160px; position: relative; }
-        .key {
-            position: relative;
-            border-radius: 0 0 6px 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            padding-bottom: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            transition: all 0.1s;
-            user-select: none;
-            border: 1px solid #111;
-        }
-        .key.white {
-            background: var(--key-white-bg);
-            color: var(--key-text-white);
-            width: 44px;
-            height: 100%;
-            z-index: 1;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.3);
-        }
-        .key.black {
-            background: var(--key-black-bg);
-            color: var(--key-text-black);
-            width: 28px;
-            height: 60%;
-            margin-left: -14px;
-            margin-right: -14px;
-            z-index: 2;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-        }
+        .key { position: relative; border-radius: 0 0 6px 6px; cursor: pointer; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 12px; font-size: 11px; font-weight: 600; transition: 0.1s; user-select: none; border: 1px solid #111; }
+        .key.white { background: var(--key-white-bg); color: var(--key-text-white); width: 44px; height: 100%; z-index: 1; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.3); }
+        .key.black { background: var(--key-black-bg); color: var(--key-text-black); width: 28px; height: 60%; margin-left: -14px; margin-right: -14px; z-index: 2; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
         .key:active { transform: scaleY(0.97); }
         .key-label { opacity: 0; transition: 0.2s; pointer-events: none; }
         .key.active .key-label, .key:hover .key-label { opacity: 1; }
+        .key.active.root .key-label, .key.active.third .key-label, .key.active.fifth .key-label { color: #fff; }
 
-        .legend {
-            display: flex;
-            gap: 25px;
-            margin-top: 40px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
+        .legend { display: flex; gap: 25px; margin-top: 40px; justify-content: center; flex-wrap: wrap; }
         .legend-item { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; font-weight: 600; }
         .swatch { width: 20px; height: 20px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
         .root-swatch { background: var(--root-color); }
         .third-swatch { background: var(--third-color); }
         .fifth-swatch { background: var(--fifth-color); }
 
-        /* --- TRAINING MODE STYLES --- */
-        .training-panel {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 30px;
-            background: rgba(0,0,0,0.2);
-            padding: 50px 30px;
-            border-radius: 16px;
-            border: 1px solid var(--panel-border);
-            max-width: 600px;
-            margin: 0 auto;
+        /* --- PANELS (Training & Rhythm) --- */
+        .panel {
+            display: flex; flex-direction: column; align-items: center; gap: 30px;
+            background: rgba(0,0,0,0.2); padding: 50px 30px; border-radius: 16px;
+            border: 1px solid var(--panel-border); max-width: 700px; margin: 0 auto;
         }
-
-        .score-board {
-            display: flex;
-            gap: 40px;
-            font-size: 1.5rem;
-            font-weight: 800;
-        }
+        .score-board { display: flex; gap: 40px; font-size: 1.5rem; font-weight: 800; justify-content: center; width: 100%; }
         .text-success { color: #4ade80; }
         .text-danger { color: #ef4444; }
         .text-warning { color: #f59e0b; }
+        .text-muted { color: var(--text-muted); }
 
-        .training-controls {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
+        .panel-controls { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+        .primary-btn, .secondary-btn {
+            border: none; padding: 14px 28px; border-radius: 8px; font-size: 1.1rem;
+            font-weight: bold; cursor: pointer; transition: 0.2s;
         }
-        .primary-btn {
-            background: var(--primary-btn);
-            color: var(--primary-btn-text);
-            border: none;
-            padding: 14px 28px;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(74, 222, 128, 0.3);
-            transition: 0.2s;
-        }
-        .primary-btn:hover:not(:disabled) { transform: scale(1.05); }
-        .secondary-btn {
-            background: #3b82f6;
-            color: #fff;
-            border: none;
-            padding: 14px 28px;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .secondary-btn:hover:not(:disabled) { transform: scale(1.05); }
-        .primary-btn:disabled, .secondary-btn:disabled {
-            opacity: 0.5; cursor: not-allowed;
-            transform: none;
-        }
+        .primary-btn { background: var(--primary-btn); color: var(--primary-btn-text); box-shadow: 0 4px 10px rgba(74, 222, 128, 0.3); }
+        .secondary-btn { background: #3b82f6; color: #fff; }
+        .primary-btn:hover:not(:disabled), .secondary-btn:hover:not(:disabled) { transform: scale(1.05); }
+        .primary-btn:disabled, .secondary-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-        .target-display { text-align: center; }
-        .target-display h3 {
-            font-size: 3rem;
-            margin: 0 0 10px 0;
-        }
-        .target-display p {
-            font-size: 1.2rem;
-            margin: 0;
-            min-height: 28px; /* reserve space for messages */
-        }
+        .status-display { text-align: center; }
+        .status-display h3 { font-size: 3rem; margin: 0 0 10px 0; }
+        .status-display p { font-size: 1.2rem; margin: 0; min-height: 28px; }
 
         /* Tuner Visualizer */
-        .tuner-container {
-            width: 100%;
-            max-width: 400px;
-            height: 40px;
-            background: rgba(0,0,0,0.5);
-            border-radius: 20px;
-            position: relative;
-            overflow: hidden;
-            border: 2px solid #333;
-            box-shadow: inset 0 5px 10px rgba(0,0,0,0.8);
+        .tuner-container { width: 100%; max-width: 400px; height: 40px; background: rgba(0,0,0,0.5); border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #333; box-shadow: inset 0 5px 10px rgba(0,0,0,0.8); }
+        .tuner-center-mark { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: rgba(255,255,255,0.3); transform: translateX(-50%); z-index: 1; }
+        .tuner-needle { position: absolute; left: 50%; top: 0; bottom: 0; width: 8px; background: #ef4444; transform: translateX(-50%); z-index: 2; transition: left 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s; opacity: 0.2; }
+        .tuner-needle.perfect { background: #4ade80; box-shadow: 0 0 15px #4ade80; }
+
+        /* Rhythm Visualizer */
+        .rhythm-grid {
+            display: flex; gap: 4px; background: rgba(0,0,0,0.4); padding: 12px;
+            border-radius: 8px; width: 100%; overflow: hidden;
         }
-        .tuner-center-mark {
-            position: absolute;
-            left: 50%;
-            top: 0; bottom: 0;
-            width: 4px;
-            background: rgba(255,255,255,0.3);
-            transform: translateX(-50%);
-            z-index: 1;
+        .rhythm-block {
+            flex: 1; height: 40px; background: rgba(255,255,255,0.05);
+            border-radius: 4px; transition: 0.05s; border: 1px solid transparent;
         }
-        .tuner-needle {
-            position: absolute;
-            left: 50%; /* 50% is center */
-            top: 0; bottom: 0;
-            width: 8px;
-            background: #ef4444; /* red when out of tune */
-            transform: translateX(-50%);
-            z-index: 2;
-            transition: left 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s;
-            opacity: 0.2; /* Dims when no sound */
-        }
-        .tuner-needle.perfect {
-            background: #4ade80; /* green when in tune */
-            box-shadow: 0 0 15px #4ade80;
-        }
+        .rhythm-block.beat-start { border-left: 2px solid rgba(255,255,255,0.4); }
+        .rhythm-block.hit { background: var(--primary-btn); }
+        .rhythm-block.active { border-color: #fff; box-shadow: 0 0 15px #fff; transform: scale(1.1); background: #fff; }
         
+        .rhythm-tap-btn {
+            width: 100%; max-width: 500px; height: 90px;
+            background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.3);
+            color: #fff; font-size: 1.5rem; font-weight: bold; border-radius: 12px;
+            cursor: pointer; margin-top: 10px; transition: 0.1s;
+        }
+        .rhythm-tap-btn:active, .rhythm-tap-btn.pressed {
+            background: rgba(255,255,255,0.2); transform: scale(0.98); border-style: solid; border-color: #fff;
+        }
     </style>
 </head>
 <body>
     <div class="app-container">
         <header>
             <h1>CAGED Master</h1>
-            <p>Domina el diapasón y entrena tu oído.</p>
+            <p>Domina el diapasón, entrena tu oído y perfecciona tu ritmo.</p>
         </header>
 
-        <!-- Navigation Tabs -->
         <div class="tabs">
             <button class="tab-btn active-btn" onclick="switchTab('caged')">Modo Explorador</button>
-            <button class="tab-btn" onclick="switchTab('training')">Modo Entrenamiento</button>
+            <button class="tab-btn" onclick="switchTab('training')">Entrenamiento Auditivo</button>
+            <button class="tab-btn" onclick="switchTab('rhythm')">Modo Ritmo</button>
         </div>
         
-        <!-- CAGED TAB CONTENT -->
+        <!-- CAGED TAB -->
         <div id="caged-tab" class="tab-content active">
             <div class="controls">
                 <div class="control-group">
@@ -472,16 +232,11 @@
                     </div>
                 </div>
             </div>
-            
             <div class="fretboard-container">
                 <div class="fret-numbers" id="fretNumbers"></div>
                 <div class="fretboard" id="fretboard"></div>
             </div>
-            
-            <div class="piano-container">
-                <div class="piano" id="piano"></div>
-            </div>
-            
+            <div class="piano-container"><div class="piano" id="piano"></div></div>
             <div class="legend">
                 <div class="legend-item"><span class="swatch root-swatch"></span> Tónica (1)</div>
                 <div class="legend-item"><span class="swatch third-swatch"></span> Tercera Mayor (3)</div>
@@ -489,59 +244,109 @@
             </div>
         </div>
 
-        <!-- TRAINING TAB CONTENT -->
+        <!-- TRAINING TAB -->
         <div id="training-tab" class="tab-content">
-            <div class="training-panel">
+            <div class="panel">
                 <div class="score-board">
                     <div class="score-item">Aciertos: <span id="score-hits" class="text-success">0</span></div>
                 </div>
-                
-                <div class="training-controls">
+                <div class="panel-controls">
                     <button id="btn-start-training" class="primary-btn">🎤 Iniciar Afinador</button>
                     <button id="btn-play-target" class="secondary-btn" disabled>🔊 Escuchar Nota</button>
                 </div>
-
-                <div class="target-display">
+                <div class="status-display">
                     <h3>Objetivo: <span id="target-note-label">-</span></h3>
-                    <p id="tuner-feedback">Presiona "Iniciar Afinador" para conceder acceso al micrófono.</p>
+                    <p id="tuner-feedback">Presiona "Iniciar Afinador" para acceder al micrófono.</p>
                 </div>
-
                 <div class="tuner-container">
                     <div id="tuner-needle" class="tuner-needle"></div>
                     <div class="tuner-center-mark"></div>
                 </div>
             </div>
         </div>
+
+        <!-- RHYTHM TAB -->
+        <div id="rhythm-tab" class="tab-content">
+            <div class="panel">
+                <div class="score-board">
+                    <div class="score-item">Racha: <span id="rhythm-streak" class="text-warning">0</span> 🔥</div>
+                </div>
+                
+                <div class="controls" style="margin-bottom: 0;">
+                    <div class="control-group">
+                        <label>BPM: <span id="bpm-val">90</span></label>
+                        <input type="range" id="rhythm-bpm" min="60" max="140" value="90">
+                    </div>
+                    <div class="control-group">
+                        <label>Subdivisión</label>
+                        <select id="rhythm-subdiv">
+                            <option value="4">Negras (1/4)</option>
+                            <option value="8" selected>Corcheas (1/8)</option>
+                            <option value="16">Semicorcheas (1/16)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="panel-controls">
+                    <button id="btn-generate-rhythm" class="primary-btn">🎲 Generar Patrón</button>
+                </div>
+
+                <div class="status-display">
+                    <h3 id="rhythm-status">Modo Ritmo</h3>
+                    <p id="rhythm-feedback" class="text-muted">Presiona Generar Patrón para comenzar.</p>
+                </div>
+
+                <div class="rhythm-grid" id="rhythm-grid"></div>
+
+                <button id="btn-tap" class="rhythm-tap-btn">TOCAR (Espacio)</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // --- WEB AUDIO API & SYNTHESIS ---
+        // --- GLOBALS & SHARED AUDIO CONTEXT ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        function getFreq(midiNote) {
-            return 440 * Math.pow(2, (midiNote - 69) / 12);
+        function getFreq(midiNote) { return 440 * Math.pow(2, (midiNote - 69) / 12); }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active-btn'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`).classList.add('active-btn');
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+            
+            // Resume context if user interacted
+            if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
-        function playNote(midi) {
+        // --- 1. CAGED MODE ---
+        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        function getNoteLabel(midi) { return noteNames[midi % 12] + (Math.floor(midi / 12) - 1); }
+
+        const stringBases = [40, 45, 50, 55, 59, 64]; 
+        const fretsCount = 23; 
+        const cagedShapes = {
+            'C': { anchorIndex: 1, offsets: [null, 0, -1, -3, -2, 0] },
+            'A': { anchorIndex: 1, offsets: [null, 0, 2, 2, 2, 0] },
+            'G': { anchorIndex: 0, offsets: [0, -1, -3, -3, -3, 0] },
+            'E': { anchorIndex: 0, offsets: [0, 2, 2, 1, 0, 0] },
+            'D': { anchorIndex: 2, offsets: [null, null, 0, 2, 3, 2] }
+        };
+
+        let currentRoot = 0; let currentShape = 'All';
+
+        function playGuitarNote(midi) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            
-            const freq = getFreq(midi);
             const osc = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
-            
-            osc.type = 'triangle'; 
-            osc.frequency.value = freq;
-            
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            
+            osc.type = 'triangle'; osc.frequency.value = getFreq(midi);
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
             osc.start();
             gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
             gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.02);
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.5);
             osc.stop(audioCtx.currentTime + 2.5);
             
-            // Visual feedback (for CAGED Mode)
             document.querySelectorAll(`[data-midi="${midi}"]`).forEach(el => {
                 if(el.classList.contains('note-marker')) {
                     el.animate([
@@ -552,404 +357,439 @@
             });
         }
 
-        // --- MUSIC THEORY DATA ---
-        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-        function getNoteLabel(midi) {
-            return noteNames[midi % 12] + (Math.floor(midi / 12) - 1);
-        }
-
-        const stringBases = [40, 45, 50, 55, 59, 64]; 
-        const fretsCount = 23; // Frets 0 (Nut) to 22
-
-        const cagedShapes = {
-            'C': { anchorIndex: 1, offsets: [null, 0, -1, -3, -2, 0] },
-            'A': { anchorIndex: 1, offsets: [null, 0, 2, 2, 2, 0] },
-            'G': { anchorIndex: 0, offsets: [0, -1, -3, -3, -3, 0] },
-            'E': { anchorIndex: 0, offsets: [0, 2, 2, 1, 0, 0] },
-            'D': { anchorIndex: 2, offsets: [null, null, 0, 2, 3, 2] }
-        };
-
-        // --- CAGED MODE LOGIC ---
-        let currentRoot = 0; // Default C
-        let currentShape = 'All';
-
-        const fretboardEl = document.getElementById('fretboard');
-        const fretNumbersEl = document.getElementById('fretNumbers');
-        const pianoEl = document.getElementById('piano');
-        const rootSelect = document.getElementById('rootSelect');
-
         function initCaged() {
+            const rootSelect = document.getElementById('rootSelect');
             noteNames.forEach((note, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.textContent = note;
-                rootSelect.appendChild(option);
+                const opt = document.createElement('option'); opt.value = index; opt.textContent = note;
+                rootSelect.appendChild(opt);
             });
-
+            const fretNumbersEl = document.getElementById('fretNumbers');
             for(let f=0; f < fretsCount; f++) {
-                const numEl = document.createElement('div');
-                numEl.className = 'fret-number';
-                numEl.textContent = f === 0 ? 'Nut' : f;
-                fretNumbersEl.appendChild(numEl);
+                const num = document.createElement('div'); num.className = 'fret-number'; num.textContent = f===0 ? 'Nut' : f;
+                fretNumbersEl.appendChild(num);
             }
 
+            const fretboardEl = document.getElementById('fretboard');
             for (let s = 5; s >= 0; s--) {
-                const stringRow = document.createElement('div');
-                stringRow.className = 'string-row';
-                const thickness = 1.5 + ((5 - s) * 0.5);
-                stringRow.style.setProperty('--string-thickness', `${thickness}px`);
-                
+                const stringRow = document.createElement('div'); stringRow.className = 'string-row';
+                stringRow.style.setProperty('--string-thickness', `${1.5 + ((5 - s) * 0.5)}px`);
                 for (let f = 0; f < fretsCount; f++) {
-                    const fretEl = document.createElement('div');
-                    fretEl.className = 'fret';
+                    const fretEl = document.createElement('div'); fretEl.className = 'fret';
                     const midi = stringBases[s] + f;
-                    const noteMarker = document.createElement('div');
-                    noteMarker.className = 'note-marker';
-                    noteMarker.dataset.midi = midi;
-                    noteMarker.dataset.string = s;
-                    noteMarker.dataset.fret = f;
-                    noteMarker.textContent = getNoteLabel(midi);
-                    
-                    noteMarker.addEventListener('mousedown', () => playNote(midi));
-                    noteMarker.addEventListener('mouseenter', () => highlightNote(midi));
-                    noteMarker.addEventListener('mouseleave', () => unhighlightNote(midi));
-                    
-                    fretEl.appendChild(noteMarker);
-                    stringRow.appendChild(fretEl);
+                    const marker = document.createElement('div'); marker.className = 'note-marker';
+                    marker.dataset.midi = midi; marker.dataset.string = s; marker.dataset.fret = f;
+                    marker.textContent = getNoteLabel(midi);
+                    marker.addEventListener('mousedown', () => playGuitarNote(midi));
+                    marker.addEventListener('mouseenter', () => document.querySelectorAll(`[data-midi="${midi}"]`).forEach(e => e.classList.add('hover-sync')));
+                    marker.addEventListener('mouseleave', () => document.querySelectorAll(`[data-midi="${midi}"]`).forEach(e => e.classList.remove('hover-sync')));
+                    fretEl.appendChild(marker); stringRow.appendChild(fretEl);
                 }
                 fretboardEl.appendChild(stringRow);
             }
 
-            const markersRow = document.createElement('div');
-            markersRow.className = 'fretboard-markers';
+            const markersRow = document.createElement('div'); markersRow.className = 'fretboard-markers';
             for (let f = 0; f < fretsCount; f++) {
-                const markerFret = document.createElement('div');
-                markerFret.className = 'marker-fret';
-                if ([3, 5, 7, 9, 15, 17, 19, 21].includes(f)) {
-                    markerFret.innerHTML = '<div class="dot"></div>';
-                } else if ([12, 24].includes(f)) {
-                    markerFret.innerHTML = '<div class="dot"></div><div class="dot" style="margin-top: 25px;"></div>';
-                    markerFret.style.flexDirection = 'column';
-                }
-                markersRow.appendChild(markerFret);
+                const mFret = document.createElement('div'); mFret.className = 'marker-fret';
+                if ([3, 5, 7, 9, 15, 17, 19, 21].includes(f)) mFret.innerHTML = '<div class="dot"></div>';
+                else if ([12, 24].includes(f)) { mFret.innerHTML = '<div class="dot"></div><div class="dot" style="margin-top:25px;"></div>'; mFret.style.flexDirection='column'; }
+                markersRow.appendChild(mFret);
             }
             fretboardEl.appendChild(markersRow);
 
+            const pianoEl = document.getElementById('piano');
             for (let midi = 36; midi <= 84; midi++) {
-                const noteClass = [0, 2, 4, 5, 7, 9, 11].includes(midi % 12) ? 'white' : 'black';
-                const keyEl = document.createElement('div');
-                keyEl.className = `key ${noteClass}`;
-                keyEl.dataset.midi = midi;
-                
-                const label = document.createElement('span');
-                label.className = 'key-label';
-                label.textContent = getNoteLabel(midi);
-                keyEl.appendChild(label);
-                
-                keyEl.addEventListener('mousedown', () => playNote(midi));
-                keyEl.addEventListener('mouseenter', () => highlightNote(midi));
-                keyEl.addEventListener('mouseleave', () => unhighlightNote(midi));
-                
-                pianoEl.appendChild(keyEl);
+                const key = document.createElement('div');
+                key.className = `key ${[0, 2, 4, 5, 7, 9, 11].includes(midi % 12) ? 'white' : 'black'}`;
+                key.dataset.midi = midi;
+                const label = document.createElement('span'); label.className = 'key-label'; label.textContent = getNoteLabel(midi);
+                key.appendChild(label);
+                key.addEventListener('mousedown', () => playGuitarNote(midi));
+                key.addEventListener('mouseenter', () => document.querySelectorAll(`[data-midi="${midi}"]`).forEach(e => e.classList.add('hover-sync')));
+                key.addEventListener('mouseleave', () => document.querySelectorAll(`[data-midi="${midi}"]`).forEach(e => e.classList.remove('hover-sync')));
+                pianoEl.appendChild(key);
             }
 
-            rootSelect.addEventListener('change', (e) => {
-                currentRoot = parseInt(e.target.value);
-                updateHighlights();
-            });
-
+            rootSelect.addEventListener('change', (e) => { currentRoot = parseInt(e.target.value); updateHighlights(); });
             document.querySelectorAll('.shape-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active-btn'));
-                    e.target.classList.add('active-btn');
-                    currentShape = e.target.dataset.shape;
-                    updateHighlights();
+                    e.target.classList.add('active-btn'); currentShape = e.target.dataset.shape; updateHighlights();
                 });
             });
-
             updateHighlights();
         }
 
-        function highlightNote(midi) {
-            document.querySelectorAll(`[data-midi="${midi}"]`).forEach(el => el.classList.add('hover-sync'));
-        }
-        
-        function unhighlightNote(midi) {
-            document.querySelectorAll(`[data-midi="${midi}"]`).forEach(el => el.classList.remove('hover-sync'));
-        }
-
         function updateHighlights() {
-            document.querySelectorAll('.note-marker, .key').forEach(el => {
-                el.classList.remove('active', 'root', 'third', 'fifth');
-            });
-            
-            let activeMidiSet = new Set();
-            let activeStringFrets = [];
-            
+            document.querySelectorAll('.note-marker, .key').forEach(el => el.classList.remove('active', 'root', 'third', 'fifth'));
+            let activeMidiSet = new Set(), activeStringFrets = [];
             if (currentShape === 'All') {
                 for (let s = 0; s < 6; s++) {
                     for (let f = 0; f < fretsCount; f++) {
-                        let midi = stringBases[s] + f;
-                        let interval = (midi - currentRoot) % 12;
-                        if (interval < 0) interval += 12; 
-                        
-                        if (interval === 0 || interval === 4 || interval === 7) {
-                            activeStringFrets.push({ string: s, fret: f, interval });
-                            activeMidiSet.add(midi);
-                        }
+                        let midi = stringBases[s] + f; let interval = (midi - currentRoot) % 12; if(interval < 0) interval += 12; 
+                        if ([0, 4, 7].includes(interval)) { activeStringFrets.push({ string: s, fret: f, interval }); activeMidiSet.add(midi); }
                     }
                 }
             } else {
                 const shapeObj = cagedShapes[currentShape];
                 for (let f = 0; f < fretsCount; f++) {
-                    let anchorMidi = stringBases[shapeObj.anchorIndex] + f;
-                    if (anchorMidi % 12 === currentRoot) {
-                        let positionNotes = [];
-                        let fitsInFretboard = true;
+                    if ((stringBases[shapeObj.anchorIndex] + f) % 12 === currentRoot) {
+                        let positionNotes = [], fits = true;
                         for (let s = 0; s < 6; s++) {
                             if (shapeObj.offsets[s] !== null) {
                                 let shapeFret = f + shapeObj.offsets[s];
-                                if (shapeFret < 0 || shapeFret >= fretsCount) {
-                                    fitsInFretboard = false; break;
-                                }
-                                let midi = stringBases[s] + shapeFret;
-                                let interval = (midi - currentRoot) % 12;
-                                if (interval < 0) interval += 12;
+                                if (shapeFret < 0 || shapeFret >= fretsCount) { fits = false; break; }
+                                let midi = stringBases[s] + shapeFret; let interval = (midi - currentRoot) % 12; if(interval < 0) interval += 12;
                                 positionNotes.push({ string: s, fret: shapeFret, interval, midi });
                             }
                         }
-                        if (fitsInFretboard) {
-                            positionNotes.forEach(note => {
-                                activeStringFrets.push(note);
-                                activeMidiSet.add(note.midi);
-                            });
-                        }
+                        if (fits) positionNotes.forEach(n => { activeStringFrets.push(n); activeMidiSet.add(n.midi); });
                     }
                 }
             }
-            
             activeStringFrets.forEach(note => {
                 const marker = document.querySelector(`.note-marker[data-string="${note.string}"][data-fret="${note.fret}"]`);
                 if (marker) {
                     marker.classList.add('active');
                     if (note.interval === 0) marker.classList.add('root');
-                    if (note.interval === 4) marker.classList.add('third');
-                    if (note.interval === 7) marker.classList.add('fifth');
+                    else if (note.interval === 4) marker.classList.add('third');
+                    else if (note.interval === 7) marker.classList.add('fifth');
                 }
             });
-            
             activeMidiSet.forEach(midi => {
                 const key = document.querySelector(`.key[data-midi="${midi}"]`);
                 if (key) {
-                    key.classList.add('active');
-                    let interval = (midi - currentRoot) % 12;
-                    if (interval < 0) interval += 12;
-                    if (interval === 0) key.classList.add('root');
-                    if (interval === 4) key.classList.add('third');
-                    if (interval === 7) key.classList.add('fifth');
+                    key.classList.add('active'); let interval = (midi - currentRoot) % 12; if(interval < 0) interval += 12;
+                    if (interval === 0) key.classList.add('root'); else if (interval === 4) key.classList.add('third'); else if (interval === 7) key.classList.add('fifth');
                 }
             });
         }
 
+        // --- 2. EAR TRAINING MODE ---
+        let micStream = null; let analyser = null; let trainingActive = false;
+        let targetMidi = null; let hitsTraining = 0; let perfectFrames = 0;
 
-        // --- TAB SWITCHING ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active-btn'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            if (tabId === 'caged') {
-                document.querySelector('.tab-btn[onclick="switchTab(\'caged\')"]').classList.add('active-btn');
-                document.getElementById('caged-tab').classList.add('active');
-            } else {
-                document.querySelector('.tab-btn[onclick="switchTab(\'training\')"]').classList.add('active-btn');
-                document.getElementById('training-tab').classList.add('active');
-            }
-        }
-
-
-        // --- EAR TRAINING MODE DSP & LOGIC ---
-        let micStream = null;
-        let analyser = null;
-        let trainingActive = false;
-        let targetMidi = null;
-        let hits = 0;
-        let perfectFrames = 0;
-
-        const btnStart = document.getElementById('btn-start-training');
-        const btnPlay = document.getElementById('btn-play-target');
-        const targetLabel = document.getElementById('target-note-label');
-        const tunerFeedback = document.getElementById('tuner-feedback');
-        const tunerNeedle = document.getElementById('tuner-needle');
-        const scoreHits = document.getElementById('score-hits');
-
-        // Autocorrelation algorithm (YIN-like basic approach)
         function autoCorrelate(buf, sampleRate) {
-            let SIZE = buf.length;
-            let rms = 0;
+            let SIZE = buf.length; let rms = 0;
             for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
             rms = Math.sqrt(rms / SIZE);
-            
-            // Noise Gate (Threshold)
             if (rms < 0.015) return -1;
 
             let r1 = 0, r2 = SIZE - 1, thres = 0.2;
             for (let i = 0; i < SIZE / 2; i++) if (Math.abs(buf[i]) < thres) { r1 = i; break; }
             for (let i = 1; i < SIZE / 2; i++) if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; }
-            buf = buf.slice(r1, r2);
-            SIZE = buf.length;
+            buf = buf.slice(r1, r2); SIZE = buf.length;
 
             let c = new Array(SIZE).fill(0);
-            for (let i = 0; i < SIZE; i++)
-                for (let j = 0; j < SIZE - i; j++)
-                    c[i] = c[i] + buf[j] * buf[j + i];
-
+            for (let i = 0; i < SIZE; i++) for (let j = 0; j < SIZE - i; j++) c[i] = c[i] + buf[j] * buf[j + i];
             let d = 0; while (c[d] > c[d + 1]) d++;
             let maxval = -1, maxpos = -1;
-            for (let i = d; i < SIZE; i++) {
-                if (c[i] > maxval) {
-                    maxval = c[i];
-                    maxpos = i;
-                }
-            }
+            for (let i = d; i < SIZE; i++) { if (c[i] > maxval) { maxval = c[i]; maxpos = i; } }
             let T0 = maxpos;
-
             let x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
-            let a = (x1 + x3 - 2 * x2) / 2;
-            let b = (x3 - x1) / 2;
+            let a = (x1 + x3 - 2 * x2) / 2; let b = (x3 - x1) / 2;
             if (a) T0 = T0 - b / (2 * a);
-
             return sampleRate / T0;
-        }
-
-        function noteFromPitch(frequency) {
-            let noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
-            return Math.round(noteNum) + 69;
-        }
-
-        function centsOffFromPitch(frequency, note) {
-            return Math.floor(1200 * Math.log(frequency / getFreq(note)) / Math.log(2));
         }
 
         async function startTraining() {
             if (audioCtx.state === 'suspended') await audioCtx.resume();
             try {
-                micStream = await navigator.mediaDevices.getUserMedia({ audio: {
-                    echoCancellation: false,
-                    autoGainControl: false,
-                    noiseSuppression: false
-                } });
-                
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, autoGainControl: false, noiseSuppression: false } });
                 let source = audioCtx.createMediaStreamSource(micStream);
-                analyser = audioCtx.createAnalyser();
-                analyser.fftSize = 2048;
-                source.connect(analyser);
-                
+                analyser = audioCtx.createAnalyser(); analyser.fftSize = 2048; source.connect(analyser);
                 trainingActive = true;
-                btnStart.textContent = '🎙️ Micrófono Activo';
-                btnStart.disabled = true;
-                btnPlay.disabled = false;
-                
-                newTargetNote();
-                updatePitch();
-            } catch (err) {
-                alert('No se pudo acceder al micrófono. Por favor, revisa los permisos.');
-                console.error(err);
-            }
+                const btnStart = document.getElementById('btn-start-training');
+                btnStart.textContent = '🎙️ Micrófono Activo'; btnStart.disabled = true;
+                document.getElementById('btn-play-target').disabled = false;
+                newTargetNote(); updatePitch();
+            } catch (err) { alert('No se pudo acceder al micrófono. Por favor, revisa los permisos.'); }
         }
 
         function newTargetNote() {
-            // E2 (40) to E5 (76) covers standard guitar range
             targetMidi = Math.floor(Math.random() * (76 - 40 + 1)) + 40;
-            targetLabel.textContent = getNoteLabel(targetMidi);
-            tunerFeedback.textContent = "Toca la nota mostrada en tu guitarra...";
-            tunerFeedback.className = "text-muted";
-            tunerNeedle.style.left = '50%';
-            tunerNeedle.classList.remove('perfect');
-            perfectFrames = 0;
-            playNote(targetMidi);
+            document.getElementById('target-note-label').textContent = getNoteLabel(targetMidi);
+            document.getElementById('tuner-feedback').textContent = "Toca la nota mostrada en tu guitarra...";
+            document.getElementById('tuner-feedback').className = "text-muted";
+            document.getElementById('tuner-needle').style.left = '50%';
+            document.getElementById('tuner-needle').classList.remove('perfect');
+            perfectFrames = 0; playGuitarNote(targetMidi);
         }
 
         function updatePitch() {
             if (!trainingActive) return;
             requestAnimationFrame(updatePitch);
-            
-            let buf = new Float32Array(analyser.fftSize);
-            analyser.getFloatTimeDomainData(buf);
-            
+            let buf = new Float32Array(analyser.fftSize); analyser.getFloatTimeDomainData(buf);
             let ac = autoCorrelate(buf, audioCtx.sampleRate);
+            const needle = document.getElementById('tuner-needle');
+            const feedback = document.getElementById('tuner-feedback');
+            if (ac === -1) { needle.style.opacity = '0.1'; return; }
             
-            if (ac === -1) {
-                // Background noise / silence
-                tunerNeedle.style.opacity = '0.1';
-                return;
-            }
-            
-            tunerNeedle.style.opacity = '1';
-            let pitch = ac;
-            let note = noteFromPitch(pitch);
-            let cents = centsOffFromPitch(pitch, note);
+            needle.style.opacity = '1';
+            let note = Math.round(12 * (Math.log(ac / 440) / Math.log(2))) + 69;
+            let cents = Math.floor(1200 * Math.log(ac / getFreq(note)) / Math.log(2));
             
             if (targetMidi) {
                 let midiDiff = note - targetMidi;
-                
                 if (midiDiff !== 0) {
-                    // Wrong note
-                    tunerNeedle.style.left = '50%';
-                    tunerNeedle.classList.remove('perfect');
-                    perfectFrames = 0;
-                    
-                    if (Math.abs(midiDiff) > 1) {
-                        tunerFeedback.textContent = `Tocaste ${getNoteLabel(note)}. ¡Es otra nota!`;
-                        tunerFeedback.className = 'text-danger';
-                    } else if (midiDiff > 0) {
-                        tunerFeedback.textContent = `Tocaste ${getNoteLabel(note)}. Baja el tono.`;
-                        tunerFeedback.className = 'text-warning';
-                    } else {
-                        tunerFeedback.textContent = `Tocaste ${getNoteLabel(note)}. Sube el tono.`;
-                        tunerFeedback.className = 'text-warning';
-                    }
+                    needle.style.left = '50%'; needle.classList.remove('perfect'); perfectFrames = 0;
+                    if (Math.abs(midiDiff) > 1) { feedback.textContent = `Tocaste ${getNoteLabel(note)}. ¡Es otra nota!`; feedback.className = 'text-danger'; }
+                    else if (midiDiff > 0) { feedback.textContent = `Tocaste ${getNoteLabel(note)}. Baja el tono.`; feedback.className = 'text-warning'; }
+                    else { feedback.textContent = `Tocaste ${getNoteLabel(note)}. Sube el tono.`; feedback.className = 'text-warning'; }
                 } else {
-                    // Correct note, now check cents for exact tuning
-                    let needlePos = 50 + cents; // -50 to 50 cents mapped to 0-100%
-                    needlePos = Math.max(0, Math.min(100, needlePos));
-                    tunerNeedle.style.left = `${needlePos}%`;
-                    
+                    let needlePos = Math.max(0, Math.min(100, 50 + cents));
+                    needle.style.left = `${needlePos}%`;
                     if (Math.abs(cents) < 15) {
-                        tunerFeedback.textContent = `¡Perfecto! Mantén la nota...`;
-                        tunerFeedback.className = 'text-success';
-                        tunerNeedle.classList.add('perfect');
-                        perfectFrames++;
-                        
-                        // Roughly 0.4 seconds sustained (at 60fps)
+                        feedback.textContent = `¡Perfecto! Mantén la nota...`; feedback.className = 'text-success'; needle.classList.add('perfect'); perfectFrames++;
                         if (perfectFrames > 25) {
-                            hits++;
-                            scoreHits.textContent = hits;
-                            tunerFeedback.textContent = "¡Acierto! Generando nueva nota...";
-                            targetMidi = null; // Pause checking briefly
-                            tunerNeedle.classList.remove('perfect');
-                            setTimeout(newTargetNote, 1500);
+                            hitsTraining++; document.getElementById('score-hits').textContent = hitsTraining;
+                            feedback.textContent = "¡Acierto! Generando nueva nota...";
+                            targetMidi = null; needle.classList.remove('perfect'); setTimeout(newTargetNote, 1500);
                         }
                     } else {
-                        tunerNeedle.classList.remove('perfect');
-                        perfectFrames = 0;
-                        if (cents < 0) {
-                            tunerFeedback.textContent = `Un poco grave... Sube el tono`;
-                            tunerFeedback.className = 'text-warning';
-                        } else {
-                            tunerFeedback.textContent = `Un poco agudo... Baja el tono`;
-                            tunerFeedback.className = 'text-warning';
-                        }
+                        needle.classList.remove('perfect'); perfectFrames = 0;
+                        feedback.textContent = cents < 0 ? `Un poco grave... Sube el tono` : `Un poco agudo... Baja el tono`;
+                        feedback.className = 'text-warning';
                     }
                 }
             }
         }
+        document.getElementById('btn-start-training').addEventListener('click', startTraining);
+        document.getElementById('btn-play-target').addEventListener('click', () => { if (targetMidi) playGuitarNote(targetMidi); });
 
-        btnStart.addEventListener('click', startTraining);
-        btnPlay.addEventListener('click', () => {
-            if (targetMidi) playNote(targetMidi);
+        // --- 3. RHYTHM MODE ---
+        let rhythmBPM = 90;
+        let rhythmSubdivision = 8; 
+        let isRhythmActive = false;
+        let currentPhase = 'idle'; // 'idle', 'listen', 'play'
+        let rhythmTimerID = null;
+
+        let nextNoteTime = 0.0;
+        let currentStep = 0; 
+        let generatedPattern = []; 
+        let expectedTaps = []; 
+        let userTaps = [];
+        let rhythmStreak = 0;
+        let rhythmEvents = []; // Queue for visuals
+
+        const bpmSlider = document.getElementById('rhythm-bpm');
+        const bpmVal = document.getElementById('bpm-val');
+        const subdivSelect = document.getElementById('rhythm-subdiv');
+        const rhythmGrid = document.getElementById('rhythm-grid');
+        const rhythmStatus = document.getElementById('rhythm-status');
+        const rhythmFeedback = document.getElementById('rhythm-feedback');
+        const btnGenerate = document.getElementById('btn-generate-rhythm');
+        const btnTap = document.getElementById('btn-tap');
+
+        bpmSlider.addEventListener('input', (e) => { rhythmBPM = e.target.value; bpmVal.textContent = rhythmBPM; });
+        subdivSelect.addEventListener('change', (e) => { rhythmSubdivision = parseInt(e.target.value); });
+
+        function generatePattern() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            isRhythmActive = false;
+            clearTimeout(rhythmTimerID);
+            
+            generatedPattern = [];
+            let totalSteps = rhythmSubdivision * 2; // 2 bars
+            for(let i=0; i < totalSteps; i++) {
+                // Ensure hit on first beat, else random 50/50
+                if (i === 0) generatedPattern.push(1);
+                else generatedPattern.push(Math.random() > 0.5 ? 1 : 0);
+            }
+            
+            // Build visual grid
+            rhythmGrid.innerHTML = '';
+            let stepsPerBeat = rhythmSubdivision / 4;
+            for(let i=0; i < totalSteps; i++) {
+                let block = document.createElement('div');
+                block.className = 'rhythm-block';
+                if (generatedPattern[i] === 1) block.classList.add('hit');
+                if (i % stepsPerBeat === 0) block.classList.add('beat-start');
+                rhythmGrid.appendChild(block);
+            }
+
+            // Start Playback
+            currentPhase = 'listen';
+            rhythmStatus.textContent = "ESCUCHA...";
+            rhythmStatus.className = "text-warning";
+            rhythmFeedback.textContent = "Memoriza el patrón";
+            
+            currentStep = 0;
+            expectedTaps = [];
+            userTaps = [];
+            rhythmEvents = [];
+            nextNoteTime = audioCtx.currentTime + 0.1; // start slightly in future
+            isRhythmActive = true;
+            rhythmScheduler();
+            requestAnimationFrame(drawRhythmVisuals);
+        }
+
+        btnGenerate.addEventListener('click', generatePattern);
+
+        function playClick(time, isHigh, isMetronome = false) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            
+            osc.type = isMetronome ? 'sine' : 'square';
+            osc.frequency.value = isHigh ? 1000 : 500;
+            if(!isMetronome) osc.frequency.value = 800; // Woodblock tone
+            
+            // Very percussive envelope
+            gain.gain.setValueAtTime(0, time);
+            gain.gain.linearRampToValueAtTime(isMetronome ? 0.3 : 0.8, time + 0.001);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+            
+            osc.start(time);
+            osc.stop(time + 0.05);
+        }
+
+        function scheduleRhythmNote(stepNumber, time) {
+            let stepsPerBeat = rhythmSubdivision / 4;
+            let isBeat = (stepNumber % stepsPerBeat === 0);
+            let isBar = (stepNumber % rhythmSubdivision === 0);
+            
+            // Metronome (Plays in both phases)
+            if (isBeat) {
+                playClick(time, isBar, true);
+            }
+            
+            let isHit = generatedPattern[stepNumber] === 1;
+            
+            if (currentPhase === 'listen' && isHit) {
+                playClick(time, false, false);
+            }
+            
+            if (currentPhase === 'play' && isHit) {
+                expectedTaps.push(time);
+            }
+            
+            // Queue event for visual synchrony
+            rhythmEvents.push({ step: stepNumber, time: time, phase: currentPhase });
+        }
+
+        function advanceNote() {
+            const secondsPerBeat = 60.0 / rhythmBPM;
+            const secondsPerStep = secondsPerBeat / (rhythmSubdivision / 4);
+            nextNoteTime += secondsPerStep;
+            currentStep++;
+            
+            if (currentStep >= rhythmSubdivision * 2) {
+                currentStep = 0;
+                if (currentPhase === 'listen') {
+                    currentPhase = 'play';
+                } else if (currentPhase === 'play') {
+                    currentPhase = 'idle';
+                    isRhythmActive = false;
+                    // Evaluate performance slightly after the last note finishes
+                    setTimeout(evaluatePerformance, 500); 
+                }
+            }
+        }
+
+        function rhythmScheduler() {
+            if (!isRhythmActive) return;
+            // lookahead 0.1s
+            while (nextNoteTime < audioCtx.currentTime + 0.1) {
+                scheduleRhythmNote(currentStep, nextNoteTime);
+                advanceNote();
+            }
+            rhythmTimerID = setTimeout(rhythmScheduler, 25.0);
+        }
+
+        function drawRhythmVisuals() {
+            if (!isRhythmActive && currentPhase === 'idle') return;
+            let now = audioCtx.currentTime;
+            
+            // Find current active step
+            while(rhythmEvents.length > 0 && rhythmEvents[0].time < now) {
+                let event = rhythmEvents.shift();
+                
+                // Update UI based on phase shifts
+                if (event.step === 0 && event.phase === 'play') {
+                    rhythmStatus.textContent = "¡TU TURNO!";
+                    rhythmStatus.className = "text-success";
+                    rhythmFeedback.textContent = "Toca el patrón en la barra espaciadora";
+                }
+                
+                // Highlight grid block
+                Array.from(rhythmGrid.children).forEach((block, idx) => {
+                    if (idx === event.step) block.classList.add('active');
+                    else block.classList.remove('active');
+                });
+            }
+            requestAnimationFrame(drawRhythmVisuals);
+        }
+
+        // User Input
+        function handleUserTap() {
+            if (currentPhase !== 'play') return;
+            let tapTime = audioCtx.currentTime;
+            userTaps.push(tapTime);
+            playClick(tapTime, false, false); // Audio feedback
+            
+            // Visual feedback on button
+            btnTap.classList.add('pressed');
+            setTimeout(() => btnTap.classList.remove('pressed'), 100);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && currentPhase === 'play') {
+                e.preventDefault();
+                handleUserTap();
+            }
         });
+        btnTap.addEventListener('mousedown', handleUserTap);
 
-        // Initialize App
+        function evaluatePerformance() {
+            let score = 0;
+            // Tolerance based on BPM/Subdivision. Max ~150ms.
+            let maxError = (60.0 / rhythmBPM) / (rhythmSubdivision / 4) * 0.5; 
+            if (maxError > 0.15) maxError = 0.15; 
+            
+            let matchedTaps = new Set();
+            
+            expectedTaps.forEach(expected => {
+                let bestDiff = 999; let bestIndex = -1;
+                userTaps.forEach((tap, idx) => {
+                    let diff = Math.abs(expected - tap);
+                    if (diff < bestDiff) { bestDiff = diff; bestIndex = idx; }
+                });
+                if (bestIndex !== -1 && bestDiff < maxError) {
+                    matchedTaps.add(bestIndex);
+                    let accuracy = 1 - (bestDiff / maxError);
+                    score += accuracy;
+                }
+            });
+            
+            let extraTaps = userTaps.length - matchedTaps.size;
+            let maxPossible = expectedTaps.length;
+            let finalScore = 0;
+            if (maxPossible > 0) {
+                finalScore = Math.max(0, (score - (extraTaps * 0.5)) / maxPossible) * 100;
+            } else if (extraTaps === 0) { finalScore = 100; }
+            
+            finalScore = Math.round(finalScore);
+            
+            rhythmStatus.className = "";
+            if (finalScore >= 80) {
+                rhythmStreak++;
+                rhythmStatus.textContent = "¡EXCELENTE!";
+                rhythmStatus.classList.add('text-success');
+                rhythmFeedback.textContent = `Precisión: ${finalScore}%`;
+            } else {
+                rhythmStreak = 0;
+                rhythmStatus.textContent = "FALLASTE";
+                rhythmStatus.classList.add('text-danger');
+                rhythmFeedback.textContent = `Precisión: ${finalScore}% (Intenta de nuevo)`;
+            }
+            
+            document.getElementById('rhythm-streak').textContent = rhythmStreak;
+            
+            // Clear grid active states
+            Array.from(rhythmGrid.children).forEach(block => block.classList.remove('active'));
+        }
+
+        // Boot
         document.addEventListener('DOMContentLoaded', initCaged);
     </script>
 </body>
