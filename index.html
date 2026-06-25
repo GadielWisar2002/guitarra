@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAGED Master - Interactive Guitar Educational Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Backgrounds */
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --panel-bg: rgba(255, 255, 255, 0.05);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            
+            /* Typography */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Fretboard Colors */
+            --fretboard-bg: linear-gradient(to right, #3e2723, #1b0000);
+            --fret-wire: #94a3b8;
+            --fret-nut: #e2e8f0;
+            --string-color: linear-gradient(to bottom, #e2e8f0, #94a3b8);
+            --fret-dot: rgba(255, 255, 255, 0.2);
+            
+            /* Piano Colors */
+            --key-white-bg: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 100%);
+            --key-black-bg: linear-gradient(to bottom, #334155 0%, #0f172a 100%);
+            --key-text-white: #0f172a;
+            --key-text-black: #f8fafc;
+            
+            /* Note Colors (CAGED Intervals) */
+            --root-color: #ef4444;    /* Red for Root (1) */
+            --third-color: #3b82f6;   /* Blue for Major 3rd (3) */
+            --fifth-color: #f59e0b;   /* Yellow/Orange for Perfect 5th (5) */
+            --note-bg-inactive: rgba(255, 255, 255, 0.1);
+            
+            /* UI Controls */
+            --primary-btn: #4ade80;
+            --primary-btn-text: #064e3b;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 20px;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        * {
+            box-sizing: inherit;
+        }
+
+        .app-container {
+            max-width: 1100px;
+            width: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #4ade80, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        select {
+            appearance: none;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        select:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .shape-buttons {
+            display: flex;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 6px;
+            border-radius: 10px;
+            border: 1px solid var(--panel-border);
+        }
+
+        .shape-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .shape-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .shape-btn.active-btn {
+            background: var(--primary-btn);
+            color: var(--primary-btn-text);
+            box-shadow: 0 4px 10px rgba(74, 222, 128, 0.3);
+        }
+
+        /* FRETBOARD STYLES */
+        .fretboard-container {
+            position: relative;
+            margin-bottom: 60px;
+        }
+
+        .fretboard {
+            display: flex;
+            flex-direction: column;
+            background: var(--fretboard-bg);
+            border: 2px solid #555;
+            border-radius: 8px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            position: relative;
+        }
+
+        .string-row {
+            display: flex;
+            height: 38px;
+            position: relative;
+        }
+
+        /* String lines */
+        .string-row::before {
+            content: '';
+            position: absolute;
+            left: 0; right: 0;
+            background: var(--string-color);
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.6);
+            pointer-events: none;
+        }
+
+        .fret {
+            flex: 1;
+            border-right: 2px solid var(--fret-wire);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.2) 100%);
+        }
+
+        /* Nut / Fret 0 */
+        .fret:first-child {
+            flex: 0.4;
+            border-right: 8px solid var(--fret-nut);
+            background: #111;
+        }
+
+        /* Note Markers */
+        .note-marker {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--note-bg-inactive);
+            color: transparent;
+            z-index: 3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            border: 2px solid transparent;
+        }
+
+        /* Hover unselected notes to explore */
+        .fret:hover .note-marker {
+            opacity: 0.5;
+            color: rgba(255,255,255,0.7);
+        }
+
+        /* Active note styling */
+        .note-marker.active {
+            opacity: 1;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+
+        .fret:hover .note-marker.active {
+            transform: scale(1.15);
+            opacity: 1;
+        }
+
+        /* CAGED Interval Colors */
+        .note-marker.root, .key.active.root { background-color: var(--root-color); }
+        .note-marker.third, .key.active.third { background-color: var(--third-color); }
+        .note-marker.fifth, .key.active.fifth { background-color: var(--fifth-color); }
+
+        /* Key label visibility when active */
+        .key.active.root, .key.active.third, .key.active.fifth {
+            color: #fff;
+            border-color: rgba(255,255,255,0.4);
+        }
+        
+        .key.active.root .key-label, .key.active.third .key-label, .key.active.fifth .key-label {
+            color: #fff;
+        }
+
+        /* Sync Hover Effect across instruments */
+        .hover-sync {
+            filter: brightness(1.4);
+            transform: scale(1.15);
+            z-index: 10;
+        }
+        .key.hover-sync {
+            transform: scaleY(0.95);
+        }
+        .key.active.hover-sync {
+            filter: brightness(1.3);
+        }
+
+        /* Fret Dots Overlay */
+        .fretboard-markers {
+            position: absolute;
+            top: 0; bottom: 0; left: 0; right: 0;
+            display: flex;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .marker-fret {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .marker-fret:first-child { flex: 0.4; }
+
+        .dot {
+            width: 14px; height: 14px;
+            background: var(--fret-dot);
+            border-radius: 50%;
+        }
+
+        /* Fret Numbers Header */
+        .fret-numbers {
+            display: flex;
+            padding-top: 10px;
+            padding-bottom: 8px;
+        }
+        .fret-number {
+            flex: 1;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .fret-number:first-child { flex: 0.4; }
+
+        /* PIANO STYLES */
+        .piano-container {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            overflow-x: auto;
+            border: 1px solid var(--panel-border);
+        }
+
+        .piano {
+            display: flex;
+            height: 160px;
+            position: relative;
+        }
+
+        .key {
+            position: relative;
+            border-radius: 0 0 6px 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.1s;
+            user-select: none;
+            border: 1px solid #111;
+        }
+
+        .key.white {
+            background: var(--key-white-bg);
+            color: var(--key-text-white);
+            width: 44px;
+            height: 100%;
+            z-index: 1;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .key.black {
+            background: var(--key-black-bg);
+            color: var(--key-text-black);
+            width: 28px;
+            height: 60%;
+            margin-left: -14px;
+            margin-right: -14px;
+            z-index: 2;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+
+        .key:active {
+            transform: scaleY(0.97);
+        }
+
+        .key-label {
+            opacity: 0;
+            transition: 0.2s;
+            pointer-events: none;
+        }
+
+        .key.active .key-label, .key:hover .key-label {
+            opacity: 1;
+        }
+
+        /* LEGEND */
+        .legend {
+            display: flex;
+            gap: 25px;
+            margin-top: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .root-swatch { background: var(--root-color); }
+        .third-swatch { background: var(--third-color); }
+        .fifth-swatch { background: var(--fifth-color); }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>CAGED Master</h1>
+            <p>Explora el sistema CAGED. Selecciona la Tónica y la forma, o toca cualquier nota para escucharla.</p>
+        </header>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Tónica (Root Note)</label>
+                <select id="rootSelect"></select>
+            </div>
+            <div class="control-group">
+                <label>Forma CAGED</label>
+                <div class="shape-buttons">
+                    <button class="shape-btn" data-shape="C">C</button>
+                    <button class="shape-btn" data-shape="A">A</button>
+                    <button class="shape-btn" data-shape="G">G</button>
+                    <button class="shape-btn" data-shape="E">E</button>
+                    <button class="shape-btn" data-shape="D">D</button>
+                    <button class="shape-btn active-btn" data-shape="All">Todo</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="fretboard-container">
+            <div class="fret-numbers" id="fretNumbers"></div>
+            <div class="fretboard" id="fretboard"></div>
+        </div>
+        
+        <div class="piano-container">
+            <div class="piano" id="piano"></div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item"><span class="swatch root-swatch"></span> Tónica (1)</div>
+            <div class="legend-item"><span class="swatch third-swatch"></span> Tercera Mayor (3)</div>
+            <div class="legend-item"><span class="swatch fifth-swatch"></span> Quinta Justa (5)</div>
+        </div>
+    </div>
+
+    <script>
+        // --- WEB AUDIO API & SYNTHESIS ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Equal temperament mapping
+        function getFreq(midiNote) {
+            return 440 * Math.pow(2, (midiNote - 69) / 12);
+        }
+
+        function playNote(midi) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const freq = getFreq(midi);
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.type = 'triangle'; 
+            osc.frequency.value = freq;
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start();
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            // Quick attack
+            gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.02);
+            // Decay
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.5);
+            osc.stop(audioCtx.currentTime + 2.5);
+            
+            // Visual feedback
+            document.querySelectorAll(`[data-midi="${midi}"]`).forEach(el => {
+                if(el.classList.contains('note-marker')) {
+                    el.animate([
+                        { filter: 'brightness(2) drop-shadow(0 0 10px white)', transform: 'scale(1.2)' },
+                        { filter: 'brightness(1) drop-shadow(0 0 0px white)', transform: 'scale(1)' }
+                    ], { duration: 400 });
+                }
+            });
+        }
+
+        // --- MUSIC THEORY DATA ---
+        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        function getNoteLabel(midi) {
+            return noteNames[midi % 12] + (Math.floor(midi / 12) - 1);
+        }
+
+        // Base MIDI notes for each string (6th string to 1st string)
+        const stringBases = [40, 45, 50, 55, 59, 64]; 
+        const fretsCount = 15; // Frets 0 (Nut) to 14
+
+        // CAGED Logic: define relative fret offsets for each shape.
+        // Array maps to strings [Low E, A, D, G, B, High E]
+        const cagedShapes = {
+            'C': { anchorIndex: 1, offsets: [null, 0, -1, -3, -2, 0] },
+            'A': { anchorIndex: 1, offsets: [null, 0, 2, 2, 2, 0] },
+            'G': { anchorIndex: 0, offsets: [0, -1, -3, -3, -3, 0] },
+            'E': { anchorIndex: 0, offsets: [0, 2, 2, 1, 0, 0] },
+            'D': { anchorIndex: 2, offsets: [null, null, 0, 2, 3, 2] }
+        };
+
+        // State
+        let currentRoot = 0; // Default: C
+        let currentShape = 'All';
+
+        // DOM Elements
+        const fretboardEl = document.getElementById('fretboard');
+        const fretNumbersEl = document.getElementById('fretNumbers');
+        const pianoEl = document.getElementById('piano');
+        const rootSelect = document.getElementById('rootSelect');
+
+        // --- INITIALIZATION ---
+        function init() {
+            // Build Root Select Options
+            noteNames.forEach((note, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = note;
+                rootSelect.appendChild(option);
+            });
+
+            // Build Fret Numbers
+            for(let f=0; f < fretsCount; f++) {
+                const numEl = document.createElement('div');
+                numEl.className = 'fret-number';
+                numEl.textContent = f === 0 ? 'Nut' : f;
+                fretNumbersEl.appendChild(numEl);
+            }
+
+            // Build Fretboard
+            // Loop from 1st string (High E, index 5) down to 6th string (Low E, index 0)
+            for (let s = 5; s >= 0; s--) {
+                const stringRow = document.createElement('div');
+                stringRow.className = 'string-row';
+                // Adjust thickness visually (thickest for Low E)
+                const thickness = 1.5 + ((5 - s) * 0.5);
+                stringRow.style.setProperty('--string-thickness', `${thickness}px`);
+                
+                for (let f = 0; f < fretsCount; f++) {
+                    const fretEl = document.createElement('div');
+                    fretEl.className = 'fret';
+                    
+                    const midi = stringBases[s] + f;
+                    const noteMarker = document.createElement('div');
+                    noteMarker.className = 'note-marker';
+                    noteMarker.dataset.midi = midi;
+                    noteMarker.dataset.string = s;
+                    noteMarker.dataset.fret = f;
+                    noteMarker.textContent = getNoteLabel(midi);
+                    
+                    // Interaction Listeners
+                    noteMarker.addEventListener('mousedown', () => playNote(midi));
+                    noteMarker.addEventListener('mouseenter', () => highlightNote(midi));
+                    noteMarker.addEventListener('mouseleave', () => unhighlightNote(midi));
+                    
+                    fretEl.appendChild(noteMarker);
+                    stringRow.appendChild(fretEl);
+                }
+                fretboardEl.appendChild(stringRow);
+            }
+
+            // Build Fret Markers (Dots)
+            const markersRow = document.createElement('div');
+            markersRow.className = 'fretboard-markers';
+            for (let f = 0; f < fretsCount; f++) {
+                const markerFret = document.createElement('div');
+                markerFret.className = 'marker-fret';
+                if ([3, 5, 7, 9].includes(f)) {
+                    markerFret.innerHTML = '<div class="dot"></div>';
+                } else if (f === 12) {
+                    markerFret.innerHTML = '<div class="dot"></div><div class="dot" style="margin-top: 25px;"></div>';
+                    markerFret.style.flexDirection = 'column';
+                }
+                markersRow.appendChild(markerFret);
+            }
+            fretboardEl.appendChild(markersRow);
+
+            // Build Piano (C2 to C6 -> MIDI 36 to 84)
+            for (let midi = 36; midi <= 84; midi++) {
+                const noteClass = [0, 2, 4, 5, 7, 9, 11].includes(midi % 12) ? 'white' : 'black';
+                const keyEl = document.createElement('div');
+                keyEl.className = `key ${noteClass}`;
+                keyEl.dataset.midi = midi;
+                
+                const label = document.createElement('span');
+                label.className = 'key-label';
+                label.textContent = getNoteLabel(midi);
+                keyEl.appendChild(label);
+                
+                keyEl.addEventListener('mousedown', () => playNote(midi));
+                keyEl.addEventListener('mouseenter', () => highlightNote(midi));
+                keyEl.addEventListener('mouseleave', () => unhighlightNote(midi));
+                
+                pianoEl.appendChild(keyEl);
+            }
+
+            // Attach UI Control Listeners
+            rootSelect.addEventListener('change', (e) => {
+                currentRoot = parseInt(e.target.value);
+                updateHighlights();
+            });
+
+            document.querySelectorAll('.shape-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active-btn'));
+                    e.target.classList.add('active-btn');
+                    currentShape = e.target.dataset.shape;
+                    updateHighlights();
+                });
+            });
+
+            // Initial compute
+            updateHighlights();
+        }
+
+        // --- INTERACTION LOGIC ---
+        
+        // Sync hover between Guitar and Piano
+        function highlightNote(midi) {
+            document.querySelectorAll(`[data-midi="${midi}"]`).forEach(el => {
+                el.classList.add('hover-sync');
+            });
+        }
+        
+        function unhighlightNote(midi) {
+            document.querySelectorAll(`[data-midi="${midi}"]`).forEach(el => {
+                el.classList.remove('hover-sync');
+            });
+        }
+
+        // Calculate and apply CAGED positions
+        function updateHighlights() {
+            // Reset all markers
+            document.querySelectorAll('.note-marker, .key').forEach(el => {
+                el.classList.remove('active', 'root', 'third', 'fifth');
+            });
+            
+            let activeMidiSet = new Set();
+            let activeStringFrets = [];
+            
+            if (currentShape === 'All') {
+                // Show all notes of the selected Major chord (Root, 3rd, 5th) across the fretboard
+                for (let s = 0; s < 6; s++) {
+                    for (let f = 0; f < fretsCount; f++) {
+                        let midi = stringBases[s] + f;
+                        let interval = (midi - currentRoot) % 12;
+                        if (interval < 0) interval += 12; // Handle negative modulo correctly
+                        
+                        if (interval === 0 || interval === 4 || interval === 7) {
+                            activeStringFrets.push({ string: s, fret: f, interval });
+                            activeMidiSet.add(midi);
+                        }
+                    }
+                }
+            } else {
+                // Determine notes for the specific CAGED shape
+                const shapeObj = cagedShapes[currentShape];
+                
+                // Scan the anchor string for frets that match the selected root note
+                for (let f = 0; f < fretsCount; f++) {
+                    let anchorMidi = stringBases[shapeObj.anchorIndex] + f;
+                    
+                    if (anchorMidi % 12 === currentRoot) {
+                        let positionNotes = [];
+                        let fitsInFretboard = true;
+                        
+                        // Apply the shape offsets based on the anchor fret
+                        for (let s = 0; s < 6; s++) {
+                            if (shapeObj.offsets[s] !== null) {
+                                let shapeFret = f + shapeObj.offsets[s];
+                                
+                                // Ensure the shape doesn't overflow our fretboard bounds
+                                if (shapeFret < 0 || shapeFret >= fretsCount) {
+                                    fitsInFretboard = false;
+                                    break;
+                                }
+                                
+                                let midi = stringBases[s] + shapeFret;
+                                let interval = (midi - currentRoot) % 12;
+                                if (interval < 0) interval += 12;
+                                
+                                positionNotes.push({ string: s, fret: shapeFret, interval, midi });
+                            }
+                        }
+                        
+                        // If the entire shape is physically possible to play in this position, register it
+                        if (fitsInFretboard) {
+                            positionNotes.forEach(note => {
+                                activeStringFrets.push(note);
+                                activeMidiSet.add(note.midi);
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // Render active markers on the Fretboard
+            activeStringFrets.forEach(note => {
+                const marker = document.querySelector(`.note-marker[data-string="${note.string}"][data-fret="${note.fret}"]`);
+                if (marker) {
+                    marker.classList.add('active');
+                    if (note.interval === 0) marker.classList.add('root');
+                    if (note.interval === 4) marker.classList.add('third');
+                    if (note.interval === 7) marker.classList.add('fifth');
+                }
+            });
+            
+            // Render active keys on the Piano
+            activeMidiSet.forEach(midi => {
+                const key = document.querySelector(`.key[data-midi="${midi}"]`);
+                if (key) {
+                    key.classList.add('active');
+                    let interval = (midi - currentRoot) % 12;
+                    if (interval < 0) interval += 12;
+                    
+                    if (interval === 0) key.classList.add('root');
+                    if (interval === 4) key.classList.add('third');
+                    if (interval === 7) key.classList.add('fifth');
+                }
+            });
+        }
+
+        // Start the application when DOM is ready
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
