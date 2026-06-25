@@ -189,6 +189,7 @@
             top: 50%;
             transform: translateY(-50%);
             z-index: 2;
+            height: var(--string-thickness, 2px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.6);
             pointer-events: none;
         }
@@ -501,7 +502,7 @@
 
         // Base MIDI notes for each string (6th string to 1st string)
         const stringBases = [40, 45, 50, 55, 59, 64]; 
-        const fretsCount = 15; // Frets 0 (Nut) to 14
+        const fretsCount = 23; // Frets 0 (Nut) to 22
 
         // CAGED Logic: define relative fret offsets for each shape.
         // Array maps to strings [Low E, A, D, G, B, High E]
@@ -579,9 +580,9 @@
             for (let f = 0; f < fretsCount; f++) {
                 const markerFret = document.createElement('div');
                 markerFret.className = 'marker-fret';
-                if ([3, 5, 7, 9].includes(f)) {
+                if ([3, 5, 7, 9, 15, 17, 19, 21].includes(f)) {
                     markerFret.innerHTML = '<div class="dot"></div>';
-                } else if (f === 12) {
+                } else if ([12, 24].includes(f)) {
                     markerFret.innerHTML = '<div class="dot"></div><div class="dot" style="margin-top: 25px;"></div>';
                     markerFret.style.flexDirection = 'column';
                 }
