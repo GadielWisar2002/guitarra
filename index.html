@@ -171,6 +171,18 @@
         .toggle-container { display: flex; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 4px; margin-bottom: 20px; }
         .toggle-btn { background: transparent; border: none; color: var(--text-muted); padding: 10px 20px; font-weight: 600; cursor: pointer; border-radius: 6px; transition: 0.2s; }
         .toggle-btn.active { background: #334155; color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        /* Panel de Configuración de Notas */
+        .note-config { width: 100%; background: rgba(0,0,0,0.25); border-radius: 12px; padding: 20px; border: 1px solid var(--panel-border); }
+        .note-config h4 { margin: 0 0 12px 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); }
+        .note-checkboxes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+        .note-chip { display: flex; align-items: center; justify-content: center; width: 52px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.12); color: var(--text-muted); font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: 0.2s; user-select: none; }
+        .note-chip:hover { border-color: rgba(255,255,255,0.3); color: var(--text-main); }
+        .note-chip.checked { background: var(--primary-btn); color: var(--primary-btn-text); border-color: var(--primary-btn); box-shadow: 0 2px 8px rgba(74, 222, 128, 0.25); }
+        .note-chip input { display: none; }
+        .octave-range { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .octave-range select { padding: 8px 14px; font-size: 0.95rem; min-width: 80px; }
+        .octave-range span { color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -232,6 +244,29 @@
                     <div class="tuner-container">
                         <div id="tuner-needle" class="tuner-needle"></div>
                         <div class="tuner-center-mark"></div>
+                    </div>
+                </div>
+
+                <!-- Panel de Configuración de Notas -->
+                <div class="note-config" id="note-config-panel">
+                    <h4>🎵 Notas Permitidas</h4>
+                    <div class="note-checkboxes" id="note-checkboxes"></div>
+                    <h4>🎹 Rango de Octavas</h4>
+                    <div class="octave-range">
+                        <span>De</span>
+                        <select id="oct-min" onchange="EarTrainer.updateConfig()">
+                            <option value="2" selected>Octava 2</option>
+                            <option value="3">Octava 3</option>
+                            <option value="4">Octava 4</option>
+                            <option value="5">Octava 5</option>
+                        </select>
+                        <span>a</span>
+                        <select id="oct-max" onchange="EarTrainer.updateConfig()">
+                            <option value="2">Octava 2</option>
+                            <option value="3">Octava 3</option>
+                            <option value="4" selected>Octava 4</option>
+                            <option value="5">Octava 5</option>
+                        </select>
                     </div>
                 </div>
 
@@ -582,6 +617,67 @@
             targetMidi: null, streak: 0, perfectFrames: 0,
             isWaitingForClick: false,
 
+            // Configuración del generador de notas
+            gameConfig: {
+                allowedNotes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], // Todas las notas por defecto
+                minOctave: 2,
+                maxOctave: 4
+            },
+
+            // Construir los checkboxes de notas al inicializar
+            initNoteConfig() {
+                const container = document.getElementById('note-checkboxes');
+                MusicUtils.noteNames.forEach((name, idx) => {
+                    const chip = document.createElement('label');
+                    chip.className = 'note-chip checked';
+                    chip.innerHTML = `<input type="checkbox" value="${idx}" checked>${name}`;
+                    chip.querySelector('input').addEventListener('change', () => this.updateConfig());
+                    container.appendChild(chip);
+                });
+            },
+
+            // Leer la UI y actualizar gameConfig
+            updateConfig() {
+                // Leer checkboxes
+                const checks = document.querySelectorAll('#note-checkboxes input[type="checkbox"]');
+                this.gameConfig.allowedNotes = [];
+                checks.forEach(cb => {
+                    const chip = cb.parentElement;
+                    if (cb.checked) { chip.classList.add('checked'); this.gameConfig.allowedNotes.push(parseInt(cb.value)); }
+                    else chip.classList.remove('checked');
+                });
+                // Si no seleccionó nada, usar escala mayor de C como fallback
+                if (this.gameConfig.allowedNotes.length === 0) {
+                    this.gameConfig.allowedNotes = [0, 2, 4, 5, 7, 9, 11]; // C Mayor
+                    checks.forEach(cb => {
+                        if (this.gameConfig.allowedNotes.includes(parseInt(cb.value))) {
+                            cb.checked = true; cb.parentElement.classList.add('checked');
+                        }
+                    });
+                }
+                // Leer octavas
+                let minO = parseInt(document.getElementById('oct-min').value);
+                let maxO = parseInt(document.getElementById('oct-max').value);
+                if (minO > maxO) { let tmp = minO; minO = maxO; maxO = tmp; document.getElementById('oct-min').value = minO; document.getElementById('oct-max').value = maxO; }
+                this.gameConfig.minOctave = minO;
+                this.gameConfig.maxOctave = maxO;
+            },
+
+            // Genera una nota MIDI aleatoria filtrada por gameConfig
+            getRandomNote() {
+                // Construir pool de notas MIDI válidas
+                // MIDI octava: octava = floor(midi/12) - 1. Entonces midi = (octava+1)*12 + notaBase
+                let pool = [];
+                for (let oct = this.gameConfig.minOctave; oct <= this.gameConfig.maxOctave; oct++) {
+                    for (const noteIdx of this.gameConfig.allowedNotes) {
+                        let midi = (oct + 1) * 12 + noteIdx;
+                        if (midi >= 24 && midi <= 96) pool.push(midi); // C1 a C7 como límites absolutos
+                    }
+                }
+                if (pool.length === 0) return 60; // Fallback: C4 (Do central)
+                return pool[Math.floor(Math.random() * pool.length)];
+            },
+
             setMode(newMode) {
                 this.mode = newMode;
                 document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
@@ -617,8 +713,8 @@
             // --- MODO CLICK ---
             startClickMode() {
                 this.clearHint();
-                // Generar nota aleatoria
-                this.targetMidi = Math.floor(Math.random() * (76 - 40 + 1)) + 40;
+                // Generar nota aleatoria usando la configuración del usuario
+                this.targetMidi = this.getRandomNote();
                 this.isWaitingForClick = true;
                 
                 const fb = document.getElementById('click-feedback');
@@ -694,7 +790,7 @@
             },
 
             newTargetNoteMic() {
-                this.targetMidi = Math.floor(Math.random() * (76 - 40 + 1)) + 40;
+                this.targetMidi = this.getRandomNote();
                 document.getElementById('et-mic-label').textContent = MusicUtils.getNoteLabel(this.targetMidi);
                 document.getElementById('tuner-feedback').textContent = "Toca la nota mostrada en tu instrumento real...";
                 document.getElementById('tuner-feedback').className = "text-muted";
@@ -915,6 +1011,7 @@
             UI.init();
             CAGEDExplorer.init();
             RhythmTrainer.init();
+            EarTrainer.initNoteConfig();
         });
     </script>
 </body>
