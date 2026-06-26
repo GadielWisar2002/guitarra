@@ -155,10 +155,15 @@
 
         /* Rhythm Grid */
         .rhythm-grid { display: flex; gap: 4px; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; width: 100%; max-width: 700px; overflow: hidden; }
-        .rhythm-block { flex: 1; height: 40px; background: rgba(255,255,255,0.05); border-radius: 4px; transition: 0.05s; border: 1px solid transparent; }
+        .rhythm-block { flex: 1; height: 40px; background: rgba(255,255,255,0.05); border-radius: 4px; transition: 0.05s; border: 1px solid transparent; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; color: #fff; }
         .rhythm-block.beat-start { border-left: 2px solid rgba(255,255,255,0.4); }
-        .rhythm-block.hit { background: var(--primary-btn); }
-        .rhythm-block.active { border-color: #fff; box-shadow: 0 0 15px #fff; transform: scale(1.1); background: #fff; }
+        .rhythm-block.hit { background: var(--primary-btn); color: var(--primary-btn-text); }
+        .rhythm-block.active { border-color: #fff; box-shadow: 0 0 15px #fff; transform: scale(1.1); background: #fff; color: #000; }
+        
+        /* Modificación de Feedback en el Grid de Fraseo */
+        .rhythm-block.eval-perfect { background: #4ade80 !important; color: #064e3b !important; box-shadow: 0 0 15px #4ade80; border-color: #4ade80; }
+        .rhythm-block.eval-timing { background: #f59e0b !important; color: #000 !important; box-shadow: 0 0 15px #f59e0b; border-color: #f59e0b; }
+        .rhythm-block.eval-wrong { background: #ef4444 !important; color: #fff !important; box-shadow: 0 0 15px #ef4444; border-color: #ef4444; }
         
         .rhythm-tap-btn { width: 100%; max-width: 500px; height: 90px; background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.3); color: #fff; font-size: 1.5rem; font-weight: bold; border-radius: 12px; cursor: pointer; margin-top: 10px; transition: 0.1s; }
         .rhythm-tap-btn:active, .rhythm-tap-btn.pressed { background: rgba(255,255,255,0.2); transform: scale(0.98); border-style: solid; border-color: #fff; }
@@ -183,6 +188,11 @@
         .octave-range { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         .octave-range select { padding: 8px 14px; font-size: 0.95rem; min-width: 80px; }
         .octave-range span { color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
+        
+        .practice-option { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px 20px; border-radius: 8px; border: 1px solid var(--panel-border); cursor: pointer; user-select: none; transition: 0.2s; }
+        .practice-option:hover { background: rgba(255,255,255,0.1); }
+        .practice-option input { width: 18px; height: 18px; accent-color: var(--primary-btn); cursor: pointer; }
+        .practice-option label { cursor: pointer; font-size: 0.95rem; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -231,22 +241,6 @@
                     <div class="score-item">Aciertos / Racha: <span id="et-streak" class="text-success">0</span> 🔥 <span class="text-muted" style="font-size:0.9rem;">(Max: <span id="et-max-streak">0</span>)</span></div>
                 </div>
                 
-                <!-- Mic Mode UI -->
-                <div id="et-mic-ui" style="display: flex; flex-direction: column; align-items: center; width:100%; gap:20px;">
-                    <div class="btn-group">
-                        <button id="btn-start-training" class="primary-btn" onclick="EarTrainer.startMic()">🎤 Iniciar Afinador</button>
-                        <button id="btn-play-target" class="secondary-btn" disabled onclick="EarTrainer.playCurrentTarget()">🔊 Escuchar Nota</button>
-                    </div>
-                    <div class="status-display">
-                        <h3>Objetivo: <span id="et-mic-label">-</span></h3>
-                        <p id="tuner-feedback">Presiona "Iniciar Afinador" para usar el micrófono.</p>
-                    </div>
-                    <div class="tuner-container">
-                        <div id="tuner-needle" class="tuner-needle"></div>
-                        <div class="tuner-center-mark"></div>
-                    </div>
-                </div>
-
                 <!-- Panel de Configuración de Notas -->
                 <div class="note-config" id="note-config-panel">
                     <h4>🎵 Notas Permitidas</h4>
@@ -270,6 +264,22 @@
                     </div>
                 </div>
 
+                <!-- Mic Mode UI -->
+                <div id="et-mic-ui" style="display: flex; flex-direction: column; align-items: center; width:100%; gap:20px;">
+                    <div class="btn-group">
+                        <button id="btn-start-training" class="primary-btn" onclick="EarTrainer.startMic()">🎤 Iniciar Afinador</button>
+                        <button id="btn-play-target" class="secondary-btn" disabled onclick="EarTrainer.playCurrentTarget()">🔊 Escuchar Nota</button>
+                    </div>
+                    <div class="status-display">
+                        <h3>Objetivo: <span id="et-mic-label">-</span></h3>
+                        <p id="tuner-feedback">Presiona "Iniciar Afinador" para usar el micrófono.</p>
+                    </div>
+                    <div class="tuner-container">
+                        <div id="tuner-needle" class="tuner-needle"></div>
+                        <div class="tuner-center-mark"></div>
+                    </div>
+                </div>
+
                 <!-- Click Mode UI -->
                 <div id="et-click-ui" style="display: none; flex-direction: column; align-items: center; width:100%; gap:20px;">
                     <div class="btn-group">
@@ -287,11 +297,16 @@
         <!-- RHYTHM TRAINER CONTROLS -->
         <div id="rhythm-controls" class="tab-content">
             <div class="panel">
+                <div class="toggle-container">
+                    <button class="toggle-btn active" id="btn-rhythm-percussive" onclick="RhythmTrainer.setMode('percussive')">Modo Percusivo (Espacio)</button>
+                    <button class="toggle-btn" id="btn-rhythm-phrasing" onclick="RhythmTrainer.setMode('phrasing')">Modo Fraseo (Instrumento)</button>
+                </div>
+
                 <div class="score-board">
                     <div class="score-item">Racha Rítmica: <span id="rhythm-streak" class="text-warning">0</span> 🔥 <span class="text-muted" style="font-size:0.9rem;">(Max: <span id="rhythm-max-streak">0</span>)</span></div>
                 </div>
                 
-                <div class="controls-grid" style="width: 100%; max-width: 500px;">
+                <div class="controls-grid" style="width: 100%; max-width: 600px;">
                     <div class="control-group">
                         <label>BPM: <span id="bpm-val">90</span></label>
                         <input type="range" id="rhythm-bpm" min="60" max="140" value="90">
@@ -306,6 +321,11 @@
                     </div>
                 </div>
 
+                <div class="practice-option" onclick="document.getElementById('rhythm-halfspeed').click()">
+                    <input type="checkbox" id="rhythm-halfspeed" onclick="event.stopPropagation(); RhythmTrainer.toggleHalfSpeed()">
+                    <label for="rhythm-halfspeed">Escuchar demostración al 50% de velocidad</label>
+                </div>
+
                 <div class="btn-group">
                     <button class="primary-btn" onclick="RhythmTrainer.generatePattern()">🎲 Generar Patrón</button>
                 </div>
@@ -314,7 +334,9 @@
                     <p id="rhythm-feedback" class="text-muted">Presiona Generar Patrón para comenzar.</p>
                 </div>
                 <div class="rhythm-grid" id="rhythm-grid"></div>
+                
                 <button id="btn-tap" class="rhythm-tap-btn">TOCAR (Espacio)</button>
+                <div id="phrasing-prompt" style="display:none; font-size:1.3rem; font-weight:800; color:var(--primary-btn); border:2px dashed var(--primary-btn); padding:20px 40px; border-radius:12px; margin-top:10px;">🎸 TOCA LAS NOTAS EN EL DIAPASÓN O PIANO</div>
             </div>
         </div>
 
@@ -345,8 +367,6 @@
 
         /**
          * Motor de Audio (Singleton)
-         * Se encarga de proveer el AudioContext, la síntesis sonora (con envolventes ADSR)
-         * y los clicks percusivos.
          */
         class AudioEngine {
             constructor() {
@@ -373,7 +393,6 @@
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
                 
-                // Envolvente para suavizar el ataque y evitar "chasquidos" (clicks)
                 gain.gain.setValueAtTime(0, this.ctx.currentTime);
                 gain.gain.linearRampToValueAtTime(0.3, this.ctx.currentTime + 0.02);
                 gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
@@ -390,7 +409,7 @@
                 
                 if (type === 'metronome-high') { osc.type = 'sine'; osc.frequency.value = 1000; }
                 else if (type === 'metronome-low') { osc.type = 'sine'; osc.frequency.value = 500; }
-                else { osc.type = 'square'; osc.frequency.value = 800; } // Woodblock (Patrón rítmico)
+                else { osc.type = 'square'; osc.frequency.value = 800; } 
                 
                 gain.gain.setValueAtTime(0, time);
                 gain.gain.linearRampToValueAtTime(type.includes('metronome') ? 0.3 : 0.8, time + 0.001);
@@ -422,11 +441,9 @@
                 this.buildFretboard();
                 this.buildPiano();
                 
-                // Actualizar puntuaciones desde Storage
                 document.getElementById('et-max-streak').textContent = Store.get('etMaxStreak');
                 document.getElementById('rhythm-max-streak').textContent = Store.get('rhythmMaxStreak');
                 
-                // Animación visual al hacer click en notas del instrumento
                 document.addEventListener('instrument-clicked', (e) => {
                     const midi = e.detail.midi;
                     document.querySelectorAll(`[data-midi="${midi}"]`).forEach(el => {
@@ -444,22 +461,17 @@
                 this.currentTab = tabId;
                 audio.ensureRunning();
                 
-                // Limpiar clases activas
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-btn'));
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 
-                // Activar pestaña actual
                 document.querySelector(`.tab-btn[onclick="UI.switchTab('${tabId}')"]`).classList.add('active-btn');
                 document.getElementById(`${tabId}-controls`).classList.add('active');
                 
-                // Mostrar/Ocultar leyenda del CAGED
                 document.getElementById('caged-legend').style.display = tabId === 'caged' ? 'flex' : 'none';
                 
-                // Limpiar highlights del diapasón cuando salimos del modo CAGED
                 if (tabId !== 'caged') CAGEDExplorer.clearHighlights();
                 else CAGEDExplorer.updateHighlights();
                 
-                // Limpiar highlights del EarTrainer
                 if (tabId !== 'training') EarTrainer.clearHint();
             },
 
@@ -523,9 +535,14 @@
                 audio.playNote(midi);
                 document.dispatchEvent(new CustomEvent('instrument-clicked', { detail: { midi } }));
                 
-                // Si el Ear Trainer está activo y en modo click, verificar respuesta
+                // Ear Trainer interaccion
                 if (this.currentTab === 'training' && EarTrainer.mode === 'click' && EarTrainer.isWaitingForClick) {
                     EarTrainer.evaluateClick(midi);
+                }
+                
+                // Rhythm Trainer interaccion (Modo Fraseo)
+                if (this.currentTab === 'rhythm' && RhythmTrainer.mode === 'phrasing' && RhythmTrainer.phase === 'play') {
+                    RhythmTrainer.handleInstrumentTap(midi);
                 }
             }
         };
@@ -536,6 +553,7 @@
         const CAGEDExplorer = {
             root: 0,
             shape: 'All',
+            lastActiveMidis: new Set(),
             shapes: {
                 'C': { anchorIndex: 1, offsets: [null, 0, -1, -3, -2, 0] },
                 'A': { anchorIndex: 1, offsets: [null, 0, 2, 2, 2, 0] },
@@ -565,9 +583,6 @@
             },
 
             updateHighlights() {
-                if (UI.currentTab !== 'caged') return;
-                this.clearHighlights();
-                
                 let activeMidis = new Set();
                 
                 if (this.shape === 'All') {
@@ -595,7 +610,11 @@
                     }
                 }
                 
-                // Aplicar clases visuales
+                this.lastActiveMidis = activeMidis;
+
+                if (UI.currentTab !== 'caged') return;
+                this.clearHighlights();
+                
                 activeMidis.forEach(midi => {
                     document.querySelectorAll(`[data-midi="${midi}"]`).forEach(el => {
                         el.classList.add('active');
@@ -605,26 +624,32 @@
                         else if (interval === 7) el.classList.add('fifth');
                     });
                 });
+            },
+
+            // Devuelve un array de las notas activas para el modo fraseo
+            getActiveMidis() {
+                if (this.lastActiveMidis.size === 0) this.updateHighlights();
+                let arr = Array.from(this.lastActiveMidis);
+                if (arr.length === 0) arr = [60, 62, 64, 65, 67, 69, 71]; // C Mayor fallback
+                return arr;
             }
         };
 
         /**
-         * Módulo Ear Trainer Híbrido (Mic y Clic)
+         * Módulo Ear Trainer Híbrido
          */
         const EarTrainer = {
-            mode: 'mic', // 'mic' | 'click'
+            mode: 'mic',
             micStream: null, analyser: null, trainingActive: false,
             targetMidi: null, streak: 0, perfectFrames: 0,
             isWaitingForClick: false,
 
-            // Configuración del generador de notas
             gameConfig: {
-                allowedNotes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], // Todas las notas por defecto
+                allowedNotes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
                 minOctave: 2,
                 maxOctave: 4
             },
 
-            // Construir los checkboxes de notas al inicializar
             initNoteConfig() {
                 const container = document.getElementById('note-checkboxes');
                 MusicUtils.noteNames.forEach((name, idx) => {
@@ -636,9 +661,7 @@
                 });
             },
 
-            // Leer la UI y actualizar gameConfig
             updateConfig() {
-                // Leer checkboxes
                 const checks = document.querySelectorAll('#note-checkboxes input[type="checkbox"]');
                 this.gameConfig.allowedNotes = [];
                 checks.forEach(cb => {
@@ -646,7 +669,6 @@
                     if (cb.checked) { chip.classList.add('checked'); this.gameConfig.allowedNotes.push(parseInt(cb.value)); }
                     else chip.classList.remove('checked');
                 });
-                // Si no seleccionó nada, usar escala mayor de C como fallback
                 if (this.gameConfig.allowedNotes.length === 0) {
                     this.gameConfig.allowedNotes = [0, 2, 4, 5, 7, 9, 11]; // C Mayor
                     checks.forEach(cb => {
@@ -655,7 +677,6 @@
                         }
                     });
                 }
-                // Leer octavas
                 let minO = parseInt(document.getElementById('oct-min').value);
                 let maxO = parseInt(document.getElementById('oct-max').value);
                 if (minO > maxO) { let tmp = minO; minO = maxO; maxO = tmp; document.getElementById('oct-min').value = minO; document.getElementById('oct-max').value = maxO; }
@@ -663,30 +684,26 @@
                 this.gameConfig.maxOctave = maxO;
             },
 
-            // Genera una nota MIDI aleatoria filtrada por gameConfig
             getRandomNote() {
-                // Construir pool de notas MIDI válidas
-                // MIDI octava: octava = floor(midi/12) - 1. Entonces midi = (octava+1)*12 + notaBase
                 let pool = [];
                 for (let oct = this.gameConfig.minOctave; oct <= this.gameConfig.maxOctave; oct++) {
                     for (const noteIdx of this.gameConfig.allowedNotes) {
                         let midi = (oct + 1) * 12 + noteIdx;
-                        if (midi >= 24 && midi <= 96) pool.push(midi); // C1 a C7 como límites absolutos
+                        if (midi >= 24 && midi <= 96) pool.push(midi);
                     }
                 }
-                if (pool.length === 0) return 60; // Fallback: C4 (Do central)
+                if (pool.length === 0) return 60;
                 return pool[Math.floor(Math.random() * pool.length)];
             },
 
             setMode(newMode) {
                 this.mode = newMode;
-                document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('#training-controls .toggle-btn').forEach(b => b.classList.remove('active'));
                 document.getElementById(`btn-mode-${newMode}`).classList.add('active');
                 
                 document.getElementById('et-mic-ui').style.display = newMode === 'mic' ? 'flex' : 'none';
                 document.getElementById('et-click-ui').style.display = newMode === 'click' ? 'flex' : 'none';
                 
-                // Reiniciar estado
                 this.trainingActive = false;
                 this.isWaitingForClick = false;
                 this.targetMidi = null;
@@ -710,10 +727,8 @@
                 if(this.targetMidi) audio.playNote(this.targetMidi);
             },
 
-            // --- MODO CLICK ---
             startClickMode() {
                 this.clearHint();
-                // Generar nota aleatoria usando la configuración del usuario
                 this.targetMidi = this.getRandomNote();
                 this.isWaitingForClick = true;
                 
@@ -725,7 +740,7 @@
             },
 
             evaluateClick(clickedMidi) {
-                this.isWaitingForClick = false; // Bloquear múltiples clicks
+                this.isWaitingForClick = false; 
                 const fb = document.getElementById('click-feedback');
                 const diff = clickedMidi - this.targetMidi;
                 
@@ -734,7 +749,6 @@
                     fb.className = 'text-success';
                     this.updateStreak(true);
                     
-                    // Highlight the correct notes briefly
                     document.querySelectorAll(`[data-midi="${this.targetMidi}"]`).forEach(e => e.classList.add('target-hint'));
                     setTimeout(() => { this.clearHint(); this.startClickMode(); }, 1500);
                 } else {
@@ -743,17 +757,15 @@
                     fb.className = 'text-danger';
                     this.updateStreak(false);
                     
-                    // Show correct answer
                     document.querySelectorAll(`[data-midi="${this.targetMidi}"]`).forEach(e => e.classList.add('target-hint'));
                 }
             },
 
-            // --- MODO MICRÓFONO (Detección de Tono Autocorrelación) ---
             autoCorrelate(buf, sampleRate) {
                 let SIZE = buf.length; let rms = 0;
                 for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
                 rms = Math.sqrt(rms / SIZE);
-                if (rms < 0.015) return -1; // Gate de ruido
+                if (rms < 0.015) return -1;
 
                 let r1 = 0, r2 = SIZE - 1, thres = 0.2;
                 for (let i = 0; i < SIZE / 2; i++) if (Math.abs(buf[i]) < thres) { r1 = i; break; }
@@ -843,26 +855,55 @@
         };
 
         /**
-         * Módulo Entrenador Rítmico (Lookahead Scheduler)
+         * Módulo Entrenador Rítmico (Percusivo vs Fraseo)
          */
         const RhythmTrainer = {
-            bpm: 90, subdiv: 8,
+            mode: 'percussive', // 'percussive' | 'phrasing'
+            bpm: 90, subdiv: 8, halfSpeed: false,
             isActive: false, phase: 'idle', timerID: null,
             nextNoteTime: 0.0, currentStep: 0,
             pattern: [], expectedTaps: [], userTaps: [], events: [],
             streak: 0,
 
             init() {
-                document.getElementById('rhythm-bpm').addEventListener('input', (e) => { this.bpm = e.target.value; document.getElementById('bpm-val').textContent = this.bpm; });
+                document.getElementById('rhythm-bpm').addEventListener('input', (e) => { this.bpm = parseInt(e.target.value); document.getElementById('bpm-val').textContent = this.bpm; });
                 document.getElementById('rhythm-subdiv').addEventListener('change', (e) => { this.subdiv = parseInt(e.target.value); });
                 
                 const tapBtn = document.getElementById('btn-tap');
                 tapBtn.addEventListener('mousedown', () => this.handleTap());
                 document.addEventListener('keydown', (e) => {
-                    if (e.code === 'Space' && this.phase === 'play' && UI.currentTab === 'rhythm') {
+                    if (e.code === 'Space' && this.phase === 'play' && UI.currentTab === 'rhythm' && this.mode === 'percussive') {
                         e.preventDefault(); this.handleTap();
                     }
                 });
+            },
+
+            setMode(newMode) {
+                this.mode = newMode;
+                document.querySelectorAll('#rhythm-controls .toggle-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById(`btn-rhythm-${newMode}`).classList.add('active');
+                
+                if (newMode === 'percussive') {
+                    document.getElementById('btn-tap').style.display = 'block';
+                    document.getElementById('phrasing-prompt').style.display = 'none';
+                    document.getElementById('rhythm-max-streak').textContent = Store.get('rhythmMaxStreak');
+                } else {
+                    document.getElementById('btn-tap').style.display = 'none';
+                    document.getElementById('phrasing-prompt').style.display = 'block';
+                    document.getElementById('rhythm-max-streak').textContent = Store.get('rhythmPhrasingMaxStreak');
+                }
+                
+                this.streak = 0;
+                document.getElementById('rhythm-streak').textContent = this.streak;
+                this.isActive = false; clearTimeout(this.timerID);
+                document.getElementById('rhythm-status').textContent = "Entrenador Rítmico";
+                document.getElementById('rhythm-status').className = "";
+                document.getElementById('rhythm-feedback').textContent = "Presiona Generar Patrón para comenzar.";
+                document.getElementById('rhythm-grid').innerHTML = '';
+            },
+
+            toggleHalfSpeed() {
+                this.halfSpeed = document.getElementById('rhythm-halfspeed').checked;
             },
 
             generatePattern() {
@@ -870,27 +911,38 @@
                 this.isActive = false; clearTimeout(this.timerID);
                 
                 this.pattern = [];
-                let totalSteps = this.subdiv * 2; // 2 compases
+                let totalSteps = this.subdiv * 2; 
+                let activeMidis = CAGEDExplorer.getActiveMidis();
+
                 for(let i=0; i < totalSteps; i++) {
-                    if (i === 0) this.pattern.push(1); // Golpe asegurado en el pulso 1
-                    else this.pattern.push(Math.random() > 0.5 ? 1 : 0);
+                    let isHit = (i === 0) ? true : (Math.random() > 0.5);
+                    if (isHit) {
+                        if (this.mode === 'percussive') this.pattern.push(1);
+                        else {
+                            let midi = activeMidis[Math.floor(Math.random() * activeMidis.length)];
+                            this.pattern.push({ midi, label: MusicUtils.getNoteLabel(midi) });
+                        }
+                    } else this.pattern.push(0);
                 }
                 
-                // Construir grid visual
                 const grid = document.getElementById('rhythm-grid');
                 grid.innerHTML = '';
                 let stepsPerBeat = this.subdiv / 4;
                 for(let i=0; i < totalSteps; i++) {
                     let block = document.createElement('div'); block.className = 'rhythm-block';
-                    if (this.pattern[i] === 1) block.classList.add('hit');
+                    if (this.pattern[i] !== 0) {
+                        block.classList.add('hit');
+                        if (this.mode === 'phrasing') block.textContent = this.pattern[i].label;
+                    }
                     if (i % stepsPerBeat === 0) block.classList.add('beat-start');
                     grid.appendChild(block);
                 }
 
                 this.phase = 'listen';
                 const status = document.getElementById('rhythm-status');
-                status.textContent = "ESCUCHA..."; status.className = "text-warning";
-                document.getElementById('rhythm-feedback').textContent = "Memoriza el patrón";
+                status.textContent = this.halfSpeed ? "ESCUCHA (50% VELOCIDAD)..." : "ESCUCHA..."; 
+                status.className = "text-warning";
+                document.getElementById('rhythm-feedback').textContent = this.mode === 'percussive' ? "Memoriza el patrón" : "Memoriza el ritmo y las notas musicales";
                 
                 this.currentStep = 0; this.expectedTaps = []; this.userTaps = []; this.events = [];
                 this.nextNoteTime = audio.ctx.currentTime + 0.1; 
@@ -906,22 +958,30 @@
                 
                 if (isBeat) audio.playPercussiveClick(time, isBar ? 'metronome-high' : 'metronome-low');
                 
-                let isHit = this.pattern[step] === 1;
-                if (this.phase === 'listen' && isHit) audio.playPercussiveClick(time, 'woodblock');
-                if (this.phase === 'play' && isHit) this.expectedTaps.push(time);
+                let hit = this.pattern[step];
+                if (hit !== 0) {
+                    if (this.phase === 'listen') {
+                        if (this.mode === 'percussive') audio.playPercussiveClick(time, 'woodblock');
+                        else audio.playNote(hit.midi, (60.0 / (this.halfSpeed ? this.bpm/2 : this.bpm)) / (this.subdiv/4));
+                    } else if (this.phase === 'play') {
+                        this.expectedTaps.push({ time, midi: this.mode === 'phrasing' ? hit.midi : 0, step });
+                    }
+                }
                 
                 this.events.push({ step, time, phase: this.phase });
             },
 
             advance() {
-                const sps = (60.0 / this.bpm) / (this.subdiv / 4); // Seconds per step
+                let effectiveBpm = (this.phase === 'listen' && this.halfSpeed) ? (this.bpm / 2) : this.bpm;
+                const sps = (60.0 / effectiveBpm) / (this.subdiv / 4); 
                 this.nextNoteTime += sps;
                 this.currentStep++;
                 
                 if (this.currentStep >= this.subdiv * 2) {
                     this.currentStep = 0;
-                    if (this.phase === 'listen') this.phase = 'play';
-                    else if (this.phase === 'play') {
+                    if (this.phase === 'listen') {
+                        this.phase = 'play';
+                    } else if (this.phase === 'play') {
                         this.phase = 'idle'; this.isActive = false;
                         setTimeout(() => this.evaluate(), 500); 
                     }
@@ -947,7 +1007,7 @@
                     
                     if (ev.step === 0 && ev.phase === 'play') {
                         status.textContent = "¡TU TURNO!"; status.className = "text-success";
-                        document.getElementById('rhythm-feedback').textContent = "Toca el patrón en la barra espaciadora";
+                        document.getElementById('rhythm-feedback').textContent = this.mode === 'percussive' ? "Toca el patrón en la barra espaciadora" : "Toca las notas exactas en el instrumento";
                     }
                     
                     Array.from(document.getElementById('rhythm-grid').children).forEach((block, idx) => {
@@ -959,29 +1019,63 @@
             },
 
             handleTap() {
-                if (this.phase !== 'play') return;
+                if (this.phase !== 'play' || this.mode !== 'percussive') return;
                 let t = audio.ctx.currentTime;
-                this.userTaps.push(t);
+                this.userTaps.push({ time: t, midi: 0 });
                 audio.playPercussiveClick(t, 'woodblock');
                 
                 const btn = document.getElementById('btn-tap');
                 btn.classList.add('pressed'); setTimeout(() => btn.classList.remove('pressed'), 100);
             },
 
+            handleInstrumentTap(midi) {
+                if (this.phase !== 'play' || this.mode !== 'phrasing') return;
+                this.userTaps.push({ time: audio.ctx.currentTime, midi });
+            },
+
             evaluate() {
+                const blocks = Array.from(document.getElementById('rhythm-grid').children);
+                blocks.forEach(b => b.classList.remove('active'));
+
                 let score = 0;
-                let maxError = Math.min(0.15, (60.0 / this.bpm) / (this.subdiv / 4) * 0.5); 
-                
+                let maxError = Math.min(0.18, (60.0 / this.bpm) / (this.subdiv / 4) * 0.6); 
                 let matchedTaps = new Set();
+                let perfectCount = 0;
+
                 this.expectedTaps.forEach(exp => {
                     let bestDiff = 999; let bestIdx = -1;
                     this.userTaps.forEach((tap, idx) => {
-                        let diff = Math.abs(exp - tap);
+                        let diff = Math.abs(exp.time - tap.time);
                         if (diff < bestDiff) { bestDiff = diff; bestIdx = idx; }
                     });
+
+                    let block = blocks[exp.step];
+
                     if (bestIdx !== -1 && bestDiff < maxError) {
+                        let tap = this.userTaps[bestIdx];
                         matchedTaps.add(bestIdx);
-                        score += (1 - (bestDiff / maxError));
+
+                        if (this.mode === 'percussive') {
+                            score += (1 - (bestDiff / maxError));
+                            block.classList.add('eval-perfect');
+                            perfectCount++;
+                        } else {
+                            // Modo Fraseo: evaluar Pitch + Timing
+                            if (tap.midi === exp.midi) {
+                                if (bestDiff < maxError * 0.5) {
+                                    score += 1;
+                                    block.classList.add('eval-perfect'); // Verde (Pitch OK + Timing OK)
+                                    perfectCount++;
+                                } else {
+                                    score += 0.5;
+                                    block.classList.add('eval-timing'); // Amarillo (Pitch OK + Mal Timing)
+                                }
+                            } else {
+                                block.classList.add('eval-wrong'); // Rojo (Pitch Incorrecto)
+                            }
+                        }
+                    } else {
+                        block.classList.add('eval-wrong'); // Rojo (Perdido / Fuera de tiempo)
                     }
                 });
                 
@@ -990,19 +1084,20 @@
                 finalScore = Math.round(finalScore);
                 
                 const status = document.getElementById('rhythm-status');
-                if (finalScore >= 80) {
+                let storageKey = this.mode === 'percussive' ? 'rhythmMaxStreak' : 'rhythmPhrasingMaxStreak';
+
+                if (finalScore >= 80 && perfectCount >= this.expectedTaps.length * 0.6) {
                     this.streak++;
                     status.textContent = "¡EXCELENTE!"; status.className = 'text-success';
                     document.getElementById('rhythm-feedback').textContent = `Precisión: ${finalScore}%`;
-                    let max = Store.get('rhythmMaxStreak');
-                    if (this.streak > max) { Store.set('rhythmMaxStreak', this.streak); document.getElementById('rhythm-max-streak').textContent = this.streak; }
+                    let max = Store.get(storageKey);
+                    if (this.streak > max) { Store.set(storageKey, this.streak); document.getElementById('rhythm-max-streak').textContent = this.streak; }
                 } else {
                     this.streak = 0;
                     status.textContent = "FALLASTE"; status.className = 'text-danger';
-                    document.getElementById('rhythm-feedback').textContent = `Precisión: ${finalScore}% (Penalización por golpes extra o fuera de tiempo)`;
+                    document.getElementById('rhythm-feedback').textContent = `Precisión: ${finalScore}% (Revisa los colores en el grid)`;
                 }
                 document.getElementById('rhythm-streak').textContent = this.streak;
-                Array.from(document.getElementById('rhythm-grid').children).forEach(b => b.classList.remove('active'));
             }
         };
 
