@@ -503,7 +503,10 @@
                         const fret = document.createElement('div'); fret.className = 'fret';
                         const midi = MusicUtils.stringBases[s] + f;
                         const marker = document.createElement('div'); marker.className = 'note-marker';
-                        marker.dataset.midi = midi; marker.textContent = MusicUtils.getNoteLabel(midi);
+                        marker.dataset.midi = midi;
+                        marker.dataset.string = s;
+                        marker.dataset.fret = f;
+                        marker.textContent = MusicUtils.getNoteLabel(midi);
                         
                         fret.addEventListener('mousedown', () => UI.handleInstrumentClick(midi));
                         fret.addEventListener('mouseenter', () => UI.syncHover(midi, true));
@@ -571,7 +574,7 @@
             shape: 'All',
             lastActiveMidis: new Set(),
             shapes: {
-                'C': { anchorIndex: 1, offsets: [null, 0, -1, -3, -2, 0] },
+                'C': { anchorIndex: 1, offsets: [null, 0, -1, -3, -2, -3] },
                 'A': { anchorIndex: 1, offsets: [null, 0, 2, 2, 2, 0] },
                 'G': { anchorIndex: 0, offsets: [0, -1, -3, -3, -3, 0] },
                 'E': { anchorIndex: 0, offsets: [0, 2, 2, 1, 0, 0] },
@@ -600,28 +603,38 @@
 
             updateHighlights() {
                 let activeMidis = new Set();
+                let activePositions = [];
                 
                 if (this.shape === 'All') {
                     for (let s = 0; s < 6; s++) {
                         for (let f = 0; f < MusicUtils.fretsCount; f++) {
                             let midi = MusicUtils.stringBases[s] + f; 
                             let interval = (midi - this.root) % 12; if(interval < 0) interval += 12; 
-                            if ([0, 4, 7].includes(interval)) activeMidis.add(midi);
+                            if ([0, 4, 7].includes(interval)) {
+                                activeMidis.add(midi);
+                                activePositions.push({ string: s, fret: f, midi: midi });
+                            }
                         }
                     }
                 } else {
                     const shapeObj = this.shapes[this.shape];
                     for (let f = 0; f < MusicUtils.fretsCount; f++) {
                         if ((MusicUtils.stringBases[shapeObj.anchorIndex] + f) % 12 === this.root) {
-                            let fits = true; let localMidis = [];
+                            let fits = true; let localPositions = [];
                             for (let s = 0; s < 6; s++) {
                                 if (shapeObj.offsets[s] !== null) {
                                     let sf = f + shapeObj.offsets[s];
                                     if (sf < 0 || sf >= MusicUtils.fretsCount) { fits = false; break; }
-                                    localMidis.push(MusicUtils.stringBases[s] + sf);
+                                    let midi = MusicUtils.stringBases[s] + sf;
+                                    localPositions.push({ string: s, fret: sf, midi: midi });
                                 }
                             }
-                            if (fits) localMidis.forEach(m => activeMidis.add(m));
+                            if (fits) {
+                                localPositions.forEach(p => {
+                                    activeMidis.add(p.midi);
+                                    activePositions.push(p);
+                                });
+                            }
                         }
                     }
                 }
@@ -632,9 +645,19 @@
                 this.clearHighlights();
                 
                 activeMidis.forEach(midi => {
-                    document.querySelectorAll(`[data-midi="${midi}"]`).forEach(el => {
+                    document.querySelectorAll(`.key[data-midi="${midi}"]`).forEach(el => {
                         el.classList.add('active');
                         let interval = (midi - this.root) % 12; if(interval < 0) interval += 12;
+                        if (interval === 0) el.classList.add('root');
+                        else if (interval === 4) el.classList.add('third');
+                        else if (interval === 7) el.classList.add('fifth');
+                    });
+                });
+
+                activePositions.forEach(pos => {
+                    document.querySelectorAll(`.note-marker[data-string="${pos.string}"][data-fret="${pos.fret}"]`).forEach(el => {
+                        el.classList.add('active');
+                        let interval = (pos.midi - this.root) % 12; if(interval < 0) interval += 12;
                         if (interval === 0) el.classList.add('root');
                         else if (interval === 4) el.classList.add('third');
                         else if (interval === 7) el.classList.add('fifth');
