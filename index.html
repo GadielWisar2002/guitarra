@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CAGED Master & Rhythm - Suite Musical</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/soundfont-player@0.10.9/dist/soundfont-player.min.js"></script>
     <style>
         :root {
             /* Tema Oscuro y Colores Base */
@@ -376,6 +377,13 @@
         class AudioEngine {
             constructor() {
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.piano = null;
+                this.guitar = null;
+                
+                if (typeof Soundfont !== 'undefined') {
+                    Soundfont.instrument(this.ctx, 'acoustic_grand_piano').then(inst => this.piano = inst);
+                    Soundfont.instrument(this.ctx, 'acoustic_guitar_nylon').then(inst => this.guitar = inst);
+                }
             }
             
             async ensureRunning() {
@@ -386,8 +394,19 @@
                 return 440 * Math.pow(2, (midiNote - 69) / 12);
             }
 
-            playNote(midi, duration = 2.5) {
+            playNote(midi, duration = 2.5, instrument = 'guitar') {
                 this.ensureRunning();
+                
+                if (instrument === 'piano' && this.piano) {
+                    this.piano.play(midi, this.ctx.currentTime, { duration: duration });
+                    return;
+                }
+                
+                if (instrument === 'guitar' && this.guitar) {
+                    this.guitar.play(midi, this.ctx.currentTime, { duration: duration });
+                    return;
+                }
+                
                 const freq = this.getFreq(midi);
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
@@ -508,7 +527,7 @@
                         marker.dataset.fret = f;
                         marker.textContent = MusicUtils.getNoteLabel(midi);
                         
-                        fret.addEventListener('mousedown', () => UI.handleInstrumentClick(midi));
+                        fret.addEventListener('mousedown', () => UI.handleInstrumentClick(midi, 'guitar'));
                         fret.addEventListener('mouseenter', () => UI.syncHover(midi, true));
                         fret.addEventListener('mouseleave', () => UI.syncHover(midi, false));
                         
@@ -527,7 +546,7 @@
                     const label = document.createElement('span'); label.className = 'key-label'; label.textContent = MusicUtils.getNoteLabel(midi);
                     key.appendChild(label);
                     
-                    key.addEventListener('mousedown', () => UI.handleInstrumentClick(midi));
+                    key.addEventListener('mousedown', () => UI.handleInstrumentClick(midi, 'piano'));
                     key.addEventListener('mouseenter', () => UI.syncHover(midi, true));
                     key.addEventListener('mouseleave', () => UI.syncHover(midi, false));
                     
@@ -550,9 +569,9 @@
                 });
             },
 
-            handleInstrumentClick(midi) {
-                audio.playNote(midi);
-                document.dispatchEvent(new CustomEvent('instrument-clicked', { detail: { midi } }));
+            handleInstrumentClick(midi, instrument = 'guitar') {
+                audio.playNote(midi, 2.5, instrument);
+                document.dispatchEvent(new CustomEvent('instrument-clicked', { detail: { midi, instrument } }));
                 
                 // Ear Trainer interaccion
                 if (this.currentTab === 'training' && EarTrainer.mode === 'click' && EarTrainer.isWaitingForClick) {
@@ -763,7 +782,7 @@
             },
 
             playCurrentTarget() {
-                if(this.targetMidi) audio.playNote(this.targetMidi);
+                if(this.targetMidi) audio.playNote(this.targetMidi, 2.5, 'piano');
             },
 
             startClickMode() {
@@ -1001,7 +1020,7 @@
                 if (hit !== 0) {
                     if (this.phase === 'listen') {
                         if (this.mode === 'percussive') audio.playPercussiveClick(time, 'woodblock');
-                        else audio.playNote(hit.midi, (60.0 / (this.halfSpeed ? this.bpm/2 : this.bpm)) / (this.subdiv/4));
+                        else audio.playNote(hit.midi, (60.0 / (this.halfSpeed ? this.bpm/2 : this.bpm)) / (this.subdiv/4), 'guitar');
                     } else if (this.phase === 'play') {
                         this.expectedTaps.push({ time, midi: this.mode === 'phrasing' ? hit.midi : 0, step });
                     }
