@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CAGED Master & Rhythm - Suite Musical</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/soundfont-player@0.10.9/dist/soundfont-player.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/danigb/soundfont-player@master/dist/soundfont-player.min.js"></script>
     <style>
         :root {
             /* Tema Oscuro y Colores Base */
@@ -379,15 +379,25 @@
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 this.piano = null;
                 this.guitar = null;
+                this.sfLoaded = false;
                 
-                if (typeof Soundfont !== 'undefined') {
-                    Soundfont.instrument(this.ctx, 'acoustic_grand_piano').then(inst => this.piano = inst);
-                    Soundfont.instrument(this.ctx, 'acoustic_guitar_nylon').then(inst => this.guitar = inst);
-                }
+                this.loadSoundfonts();
+            }
+            
+            loadSoundfonts() {
+                if (this.sfLoaded || typeof Soundfont === 'undefined') return;
+                this.sfLoaded = true;
+                Soundfont.instrument(this.ctx, 'acoustic_grand_piano')
+                    .then(inst => this.piano = inst)
+                    .catch(e => { this.sfLoaded = false; console.error("Error loading piano:", e); });
+                Soundfont.instrument(this.ctx, 'acoustic_guitar_nylon')
+                    .then(inst => this.guitar = inst)
+                    .catch(e => { this.sfLoaded = false; console.error("Error loading guitar:", e); });
             }
             
             async ensureRunning() {
                 if (this.ctx.state === 'suspended') await this.ctx.resume();
+                this.loadSoundfonts();
             }
 
             getFreq(midiNote) {
