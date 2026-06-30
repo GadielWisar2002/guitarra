@@ -1288,7 +1288,7 @@
                 let minSpan = 99;
                 
                 for(let bassString = 0; bassString <= 2; bassString++) {
-                    for(let fret = 0; fret <= 12; fret++) {
+                    for(let fret = 0; fret <= 14; fret++) {
                         let bassMidi = MusicUtils.stringBases[bassString] + fret;
                         if (bassMidi % 12 === bassPitchClass) {
                             
@@ -1306,11 +1306,14 @@
                                 
                                 let bestFret = -1;
                                 let localMinDist = 99;
-                                for(let f = Math.max(0, fret - 2); f <= Math.min(22, fret + 3); f++) {
+                                // Allow wider stretch or open strings
+                                for(let f = 0; f <= 22; f++) {
                                     let midi = MusicUtils.stringBases[currentString] + f;
                                     if (midi % 12 === targetPc) {
-                                        if (Math.abs(f - fret) < localMinDist) {
-                                            localMinDist = Math.abs(f - fret);
+                                        // Open strings are always "close"
+                                        let dist = f === 0 ? 0.5 : Math.abs(f - fret);
+                                        if (dist <= 5 && dist < localMinDist) {
+                                            localMinDist = dist;
                                             bestFret = f;
                                         }
                                     }
@@ -1335,6 +1338,19 @@
                             }
                         }
                     }
+                }
+                
+                // Fallback: If no playable strict voicing is found, just return all notes on the fretboard
+                // and we'll handle it gracefully.
+                if (bestVoicing.length === 0) {
+                   for (let s = 0; s < 6; s++) {
+                       for (let f = 0; f < MusicUtils.fretsCount; f++) {
+                           let midi = MusicUtils.stringBases[s] + f;
+                           if (midi % 12 === bassPitchClass && bestVoicing.length === 0) {
+                               bestVoicing.push({string: s, fret: f, midi: midi}); // Just push the bass note to avoid complete failure
+                           }
+                       }
+                   }
                 }
                 
                 return bestVoicing;
