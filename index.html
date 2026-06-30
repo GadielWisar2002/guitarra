@@ -408,12 +408,12 @@
                 this.ensureRunning();
                 
                 if (instrument === 'piano' && this.piano) {
-                    this.piano.play(midi, this.ctx.currentTime, { duration: duration });
+                    this.piano.play(midi, this.ctx.currentTime, { duration: duration, gain: 4.5 });
                     return;
                 }
                 
                 if (instrument === 'guitar' && this.guitar) {
-                    this.guitar.play(midi, this.ctx.currentTime, { duration: duration });
+                    this.guitar.play(midi, this.ctx.currentTime, { duration: duration, gain: 2.0 });
                     return;
                 }
                 
