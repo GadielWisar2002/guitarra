@@ -106,6 +106,8 @@
         .note-marker.hover-sync-exact { opacity: 1 !important; background-color: var(--primary-btn) !important; color: var(--primary-btn-text) !important; box-shadow: 0 0 25px var(--primary-btn) !important; transform: scale(1.3) !important; z-index: 15 !important; }
         .key.hover-sync { transform: scaleY(0.95) !important; filter: brightness(1.3) !important; box-shadow: 0 0 15px rgba(255, 255, 255, 0.6) !important; border-color: rgba(255, 255, 255, 0.8) !important; z-index: 10 !important; }
         .key.hover-sync-exact { box-shadow: 0 0 25px var(--primary-btn) !important; border-color: var(--primary-btn) !important; z-index: 12 !important; }
+        
+        .note-marker.ghost-note { opacity: 0.4; background-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.6); }
 
         .fretboard-markers { position: absolute; top: 0; bottom: 0; left: 0; right: 0; display: flex; pointer-events: none; z-index: 1; }
         .marker-fret { flex: 1; display: flex; justify-content: center; align-items: center; }
@@ -208,6 +210,7 @@
 
         <div class="tabs">
             <button class="tab-btn active-btn" onclick="UI.switchTab('caged')">CAGED Explorer</button>
+            <button class="tab-btn" onclick="UI.switchTab('chords')">Acordes e Inversiones</button>
             <button class="tab-btn" onclick="UI.switchTab('training')">Ear Trainer</button>
             <button class="tab-btn" onclick="UI.switchTab('rhythm')">Entrenador Rítmico</button>
         </div>
@@ -230,6 +233,25 @@
                     <button class="shape-btn" data-shape="D">D</button>
                     <button class="shape-btn active-btn" data-shape="All">Todo</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- CHORDS CONTROLS -->
+        <div id="chords-controls" class="tab-content controls-grid">
+            <div class="control-group">
+                <label>Tónica</label>
+                <select id="chordRootSelect"></select>
+            </div>
+            <div class="control-group">
+                <label>Tipo de Acorde</label>
+                <select id="chordTypeSelect"></select>
+            </div>
+            <div class="control-group">
+                <label>Inversión</label>
+                <select id="chordInvSelect"></select>
+            </div>
+            <div class="control-group" style="justify-content: flex-end;">
+                <button class="primary-btn" onclick="ChordsDictionary.playChord()" style="padding: 10px; width:100%;">🔊 Escuchar Acorde</button>
             </div>
         </div>
 
@@ -354,11 +376,11 @@
         </div>
         <div class="piano-container"><div class="piano" id="piano"></div></div>
         
-        <!-- LEYENDA (Visible solo en CAGED Mode) -->
+        <!-- LEYENDA (Visible solo en CAGED y CHORDS Mode) -->
         <div id="caged-legend" class="legend">
-            <div class="legend-item"><span class="swatch root-swatch"></span> Tónica (1)</div>
-            <div class="legend-item"><span class="swatch third-swatch"></span> Tercera Mayor (3)</div>
-            <div class="legend-item"><span class="swatch fifth-swatch"></span> Quinta Justa (5)</div>
+            <div class="legend-item"><span class="swatch root-swatch"></span> Tónica (1) / Bajo</div>
+            <div class="legend-item"><span class="swatch third-swatch"></span> 2da Nota</div>
+            <div class="legend-item"><span class="swatch fifth-swatch"></span> 3ra Nota / Resto</div>
         </div>
     </div>
 
@@ -501,12 +523,13 @@
                 document.querySelector(`.tab-btn[onclick="UI.switchTab('${tabId}')"]`).classList.add('active-btn');
                 document.getElementById(`${tabId}-controls`).classList.add('active');
                 
-                document.getElementById('caged-legend').style.display = tabId === 'caged' ? 'flex' : 'none';
+                document.getElementById('caged-legend').style.display = (tabId === 'caged' || tabId === 'chords') ? 'flex' : 'none';
                 
-                if (tabId !== 'caged') CAGEDExplorer.clearHighlights();
-                else CAGEDExplorer.updateHighlights();
+                document.querySelectorAll('.note-marker, .key').forEach(el => el.classList.remove('active', 'root', 'third', 'fifth', 'ghost-note'));
                 
-                if (tabId !== 'training') EarTrainer.clearHint();
+                if (tabId === 'caged') CAGEDExplorer.updateHighlights();
+                else if (tabId === 'chords') ChordsDictionary.updateHighlights();
+                else if (tabId === 'training') EarTrainer.clearHint();
             },
 
             buildFretboard() {
@@ -626,10 +649,6 @@
                 this.updateHighlights();
             },
 
-            clearHighlights() {
-                document.querySelectorAll('.note-marker, .key').forEach(el => el.classList.remove('active', 'root', 'third', 'fifth'));
-            },
-
             updateHighlights() {
                 let activeMidis = new Set();
                 let activePositions = [];
@@ -671,7 +690,7 @@
                 this.lastActiveMidis = activeMidis;
 
                 if (UI.currentTab !== 'caged') return;
-                this.clearHighlights();
+                document.querySelectorAll('.note-marker, .key').forEach(el => el.classList.remove('active', 'root', 'third', 'fifth', 'ghost-note'));
                 
                 activeMidis.forEach(midi => {
                     document.querySelectorAll(`.key[data-midi="${midi}"]`).forEach(el => {
@@ -1169,10 +1188,209 @@
             }
         };
 
+        /**
+         * Módulo Diccionario de Acordes
+         */
+        const ChordsDictionary = {
+            root: 0,
+            type: 'major',
+            inversion: 0,
+            
+            types: {
+                'major': { label: 'Mayor', intervals: [0, 4, 7] },
+                'minor': { label: 'Menor', intervals: [0, 3, 7] },
+                'dim': { label: 'Disminuido', intervals: [0, 3, 6] },
+                'aug': { label: 'Aumentado', intervals: [0, 4, 8] },
+                'maj7': { label: 'Maj7', intervals: [0, 4, 7, 11] },
+                'min7': { label: 'Min7', intervals: [0, 3, 7, 10] },
+                'dom7': { label: 'Dom7', intervals: [0, 4, 7, 10] }
+            },
+            
+            init() {
+                const rs = document.getElementById('chordRootSelect');
+                MusicUtils.noteNames.forEach((n, i) => {
+                    const opt = document.createElement('option'); opt.value = i; opt.textContent = n; rs.appendChild(opt);
+                });
+                rs.addEventListener('change', (e) => { this.root = parseInt(e.target.value); this.updateHighlights(); });
+                
+                const ts = document.getElementById('chordTypeSelect');
+                Object.keys(this.types).forEach(k => {
+                    const opt = document.createElement('option'); opt.value = k; opt.textContent = this.types[k].label; ts.appendChild(opt);
+                });
+                ts.addEventListener('change', (e) => { 
+                    this.type = e.target.value; 
+                    this.updateInversionSelect();
+                    this.updateHighlights(); 
+                });
+                
+                const is = document.getElementById('chordInvSelect');
+                is.addEventListener('change', (e) => { this.inversion = parseInt(e.target.value); this.updateHighlights(); });
+                
+                this.updateInversionSelect();
+                this.updateHighlights();
+            },
+            
+            updateInversionSelect() {
+                const is = document.getElementById('chordInvSelect');
+                is.innerHTML = '';
+                const numNotes = this.types[this.type].intervals.length;
+                
+                const invLabels = ['Fundamental', '1ra Inversión (3ra en Bajo)', '2da Inversión (5ta en Bajo)', '3ra Inversión (7ma en Bajo)'];
+                for(let i=0; i < numNotes; i++) {
+                    const opt = document.createElement('option');
+                    opt.value = i; opt.textContent = invLabels[i];
+                    is.appendChild(opt);
+                }
+                this.inversion = 0; // reset
+            },
+            
+            playChord() {
+                let midis = this.calculatePianoVoicing();
+                midis.forEach((midi, idx) => {
+                    setTimeout(() => {
+                        audio.playNote(midi, 2.5, 'piano');
+                    }, idx * 100);
+                });
+                
+                let guitarMidis = this.calculateGuitarVoicing().map(v => v.midi);
+                if(guitarMidis.length > 0) {
+                    guitarMidis.forEach((midi, idx) => {
+                        setTimeout(() => {
+                            audio.playNote(midi, 2.5, 'guitar');
+                        }, idx * 80 + 600); 
+                    });
+                }
+            },
+            
+            calculatePianoVoicing() {
+                const intervals = this.types[this.type].intervals;
+                let voicing = [];
+                let baseMidi = 48 + this.root; // C3
+                
+                intervals.forEach(i => voicing.push(baseMidi + i));
+                
+                for(let i=0; i < this.inversion; i++) {
+                    voicing[i] += 12;
+                }
+                voicing.sort((a,b) => a - b);
+                
+                if (voicing[0] > 60) voicing = voicing.map(v => v - 12);
+                
+                return voicing;
+            },
+            
+            calculateGuitarVoicing() {
+                const intervals = this.types[this.type].intervals;
+                let targetPitchClasses = intervals.map(i => (this.root + i) % 12);
+                let bassPitchClass = targetPitchClasses[this.inversion];
+                
+                let bestVoicing = [];
+                let minSpan = 99;
+                
+                for(let bassString = 0; bassString <= 2; bassString++) {
+                    for(let fret = 0; fret <= 12; fret++) {
+                        let bassMidi = MusicUtils.stringBases[bassString] + fret;
+                        if (bassMidi % 12 === bassPitchClass) {
+                            
+                            let currentVoicing = [{ string: bassString, fret: fret, midi: bassMidi }];
+                            let isValid = true;
+                            let currentString = bassString + 1;
+                            
+                            let notesToFind = [];
+                            for(let i=1; i < intervals.length; i++) {
+                                notesToFind.push(targetPitchClasses[(this.inversion + i) % intervals.length]);
+                            }
+                            
+                            notesToFind.forEach(targetPc => {
+                                if (!isValid || currentString > 5) return;
+                                
+                                let bestFret = -1;
+                                let localMinDist = 99;
+                                for(let f = Math.max(0, fret - 2); f <= Math.min(22, fret + 3); f++) {
+                                    let midi = MusicUtils.stringBases[currentString] + f;
+                                    if (midi % 12 === targetPc) {
+                                        if (Math.abs(f - fret) < localMinDist) {
+                                            localMinDist = Math.abs(f - fret);
+                                            bestFret = f;
+                                        }
+                                    }
+                                }
+                                
+                                if (bestFret !== -1) {
+                                    currentVoicing.push({ string: currentString, fret: bestFret, midi: MusicUtils.stringBases[currentString] + bestFret });
+                                    currentString++;
+                                } else {
+                                    isValid = false;
+                                }
+                            });
+                            
+                            if (isValid && currentVoicing.length === intervals.length) {
+                                let frets = currentVoicing.map(v => v.fret).filter(f => f > 0);
+                                let span = frets.length > 0 ? Math.max(...frets) - Math.min(...frets) : 0;
+                                
+                                if (span < minSpan) {
+                                    minSpan = span;
+                                    bestVoicing = currentVoicing;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                return bestVoicing;
+            },
+            
+            updateHighlights() {
+                if (UI.currentTab !== 'chords') return;
+                
+                document.querySelectorAll('.note-marker, .key').forEach(el => el.classList.remove('active', 'root', 'third', 'fifth', 'target-hint', 'ghost-note'));
+                
+                const pianoMidis = this.calculatePianoVoicing();
+                pianoMidis.forEach((midi, idx) => {
+                    document.querySelectorAll(`.key[data-midi="${midi}"]`).forEach(el => {
+                        el.classList.add('active');
+                        if(idx === 0) el.classList.add('root');
+                        else if(idx === 1) el.classList.add('third');
+                        else el.classList.add('fifth');
+                    });
+                });
+                
+                const guitarVoicing = this.calculateGuitarVoicing();
+                guitarVoicing.forEach((note, idx) => {
+                    document.querySelectorAll(`.note-marker[data-string="${note.string}"][data-fret="${note.fret}"]`).forEach(el => {
+                        el.classList.add('active');
+                        if(idx === 0) el.classList.add('root');
+                        else if(idx === 1) el.classList.add('third');
+                        else el.classList.add('fifth');
+                    });
+                });
+                
+                const intervals = this.types[this.type].intervals;
+                const targetPcs = intervals.map(i => (this.root + i) % 12);
+                
+                for (let s = 0; s < 6; s++) {
+                    for (let f = 0; f < MusicUtils.fretsCount; f++) {
+                        let midi = MusicUtils.stringBases[s] + f; 
+                        let pc = midi % 12;
+                        
+                        if (targetPcs.includes(pc)) {
+                            let isExactVoicing = guitarVoicing.some(v => v.string === s && v.fret === f);
+                            if (!isExactVoicing) {
+                                document.querySelectorAll(`.note-marker[data-string="${s}"][data-fret="${f}"]`).forEach(el => {
+                                    el.classList.add('ghost-note');
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
         // --- INICIALIZACIÓN ---
         document.addEventListener('DOMContentLoaded', () => {
             UI.init();
             CAGEDExplorer.init();
+            ChordsDictionary.init();
             RhythmTrainer.init();
             EarTrainer.initNoteConfig();
         });
