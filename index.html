@@ -63,8 +63,9 @@
         }
         .tab-btn:hover { border-color: var(--text-muted); color: var(--text-main); }
         .tab-btn.active-btn { background: var(--primary-btn); color: var(--primary-btn-text); border-color: var(--primary-btn); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+        .tab-content { display: none !important; }
+        .tab-content.active { display: block !important; animation: fadeIn 0.4s ease; }
+        .tab-content.active.controls-grid { display: grid !important; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* CONTROLES GLOBALES */
