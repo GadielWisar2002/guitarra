@@ -6,6 +6,11 @@
     <title>CAGED Master & Rhythm - Suite Musical</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/gh/danigb/soundfont-player@master/dist/soundfont-player.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.3/build/cjs/vexflow.js"></script>
+    <script type="module">
+        import { Chord } from 'https://cdn.jsdelivr.net/npm/@tonaljs/tonal/+esm';
+        window.Tonal = { Chord };
+    </script>
     <style>
         :root {
             /* Tema Oscuro y Colores Base */
@@ -212,6 +217,7 @@
         <div class="tabs">
             <button class="tab-btn active-btn" onclick="UI.switchTab('caged')">CAGED Explorer</button>
             <button class="tab-btn" onclick="UI.switchTab('chords')">Acordes e Inversiones</button>
+            <button class="tab-btn" onclick="UI.switchTab('score')">Editor de Partitura</button>
             <button class="tab-btn" onclick="UI.switchTab('training')">Ear Trainer</button>
             <button class="tab-btn" onclick="UI.switchTab('rhythm')">Entrenador Rítmico</button>
         </div>
@@ -254,6 +260,43 @@
             <div class="control-group" style="justify-content: flex-end;">
                 <button class="primary-btn" onclick="ChordsDictionary.playChord()" style="padding: 10px; width:100%;">🔊 Escuchar Acorde</button>
             </div>
+        </div>
+
+        <!-- SCORE EDITOR CONTROLS -->
+        <div id="score-controls" class="tab-content controls-grid">
+            <div class="control-group">
+                <label>Clave</label>
+                <select id="scoreClef" onchange="ScoreEditor.setClef(this.value)">
+                    <option value="treble">Sol (Treble)</option>
+                    <option value="bass">Fa (Bass)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Figura</label>
+                <select id="scoreDuration" onchange="ScoreEditor.setDuration(this.value)">
+                    <option value="w">Redonda</option>
+                    <option value="h">Blanca</option>
+                    <option value="q" selected>Negra</option>
+                    <option value="8">Corchea</option>
+                    <option value="16">Semicorchea</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Acorde Detectado</label>
+                <div id="score-analysis-result" style="font-size: 1.5rem; font-weight: bold; color: var(--primary-btn); height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 8px;">---</div>
+            </div>
+        </div>
+        
+        <div id="score-panel" class="tab-content" style="flex-direction: column; align-items: center; gap: 20px;">
+            <div class="btn-group" style="margin-bottom: 20px;">
+                <button class="primary-btn" onclick="ScoreEditor.playScore()">▶️ Reproducir</button>
+                <button class="secondary-btn" onclick="ScoreEditor.analyzeMeasure()" style="background-color: var(--fifth-color); color: #000;">🔍 Analizar Armonía</button>
+                <button class="secondary-btn" onclick="ScoreEditor.clearScore()" style="background-color: var(--root-color);">🗑️ Limpiar</button>
+            </div>
+            <div id="score-canvas-container" style="background: #fff; border-radius: 8px; padding: 20px; box-shadow: inset 0 0 10px rgba(0,0,0,0.2); cursor: crosshair; touch-action: none; width: 100%; max-width: 640px; overflow-x: auto;">
+                <div id="score-canvas"></div>
+            </div>
+            <p class="text-muted" style="text-align: center; max-width: 600px;">Haz clic en el pentagrama para agregar notas. Presiona "Analizar Armonía" para detectar el acorde formado por todas las notas en pantalla.</p>
         </div>
 
         <!-- EAR TRAINER CONTROLS -->
@@ -528,9 +571,12 @@
                 
                 document.querySelectorAll('.note-marker, .key').forEach(el => el.classList.remove('active', 'root', 'third', 'fifth', 'ghost-note'));
                 
+                if (tabId === 'score') document.getElementById('score-panel').classList.add('active');
+                
                 if (tabId === 'caged') CAGEDExplorer.updateHighlights();
                 else if (tabId === 'chords') ChordsDictionary.updateHighlights();
                 else if (tabId === 'training') EarTrainer.clearHint();
+                else if (tabId === 'score') ScoreEditor.render();
             },
 
             buildFretboard() {
@@ -1403,11 +1449,146 @@
             }
         };
 
+        /**
+         * Módulo Editor de Partitura
+         */
+        const ScoreEditor = {
+            clef: 'treble',
+            duration: 'q',
+            notes: [],
+            VF: null,
+            renderer: null,
+            context: null,
+            stave: null,
+            
+            init() {
+                if (typeof Vex !== 'undefined') {
+                    this.VF = Vex.Flow;
+                    const div = document.getElementById('score-canvas');
+                    this.renderer = new this.VF.Renderer(div, this.VF.Renderer.Backends.SVG);
+                    this.renderer.resize(600, 200);
+                    this.context = this.renderer.getContext();
+                    
+                    div.addEventListener('click', (e) => this.handleCanvasClick(e));
+                    this.render();
+                }
+            },
+            
+            setClef(c) { this.clef = c; this.render(); },
+            setDuration(d) { this.duration = d; },
+            
+            clearScore() {
+                this.notes = [];
+                document.getElementById('score-analysis-result').textContent = '---';
+                this.render();
+            },
+            
+            handleCanvasClick(e) {
+                if (!this.stave) return;
+                const rect = document.getElementById('score-canvas').getBoundingClientRect();
+                const y = e.clientY - rect.top;
+                
+                const lineSpace = this.stave.getSpacingBetweenLines();
+                const yTop = this.stave.getYForLine(0);
+                const stepsDown = Math.round((y - yTop) / (lineSpace / 2));
+                
+                let pitch = '';
+                if (this.clef === 'treble') {
+                    const diatonicNotes = ['b/5','a/5','g/5','f/5','e/5','d/5','c/5','b/4','a/4','g/4','f/4','e/4','d/4','c/4','b/3','a/3','g/3'];
+                    let index = 3 + stepsDown;
+                    if (index < 0) index = 0;
+                    if (index >= diatonicNotes.length) index = diatonicNotes.length - 1;
+                    pitch = diatonicNotes[index];
+                } else {
+                    const diatonicNotes = ['d/4','c/4','b/3','a/3','g/3','f/3','e/3','d/3','c/3','b/2','a/2','g/2','f/2','e/2','d/2','c/2','b/1'];
+                    let index = 3 + stepsDown;
+                    if (index < 0) index = 0;
+                    if (index >= diatonicNotes.length) index = diatonicNotes.length - 1;
+                    pitch = diatonicNotes[index];
+                }
+                
+                this.notes.push({ pitch: pitch, duration: this.duration });
+                this.render();
+            },
+            
+            render() {
+                if (!this.context) return;
+                this.context.clear();
+                
+                this.stave = new this.VF.Stave(10, 40, 500);
+                this.stave.addClef(this.clef).addTimeSignature("4/4");
+                this.stave.setContext(this.context).draw();
+                
+                if (this.notes.length === 0) return;
+                
+                const staveNotes = this.notes.map(n => {
+                    return new this.VF.StaveNote({ clef: this.clef, keys: [n.pitch], duration: n.duration });
+                });
+                
+                const voice = new this.VF.Voice({ num_beats: 4, beat_value: 4 });
+                voice.setStrict(false);
+                voice.addTickables(staveNotes);
+                
+                new this.VF.Formatter().joinVoices([voice]).format([voice], 400);
+                voice.draw(this.context, this.stave);
+            },
+            
+            analyzeMeasure() {
+                if (this.notes.length === 0 || typeof Tonal === 'undefined') {
+                    document.getElementById('score-analysis-result').textContent = 'Vacío';
+                    return;
+                }
+                
+                // Convertir de formato VexFlow (ej. 'c/4') a Tonal (ej. 'C4')
+                const pcNotes = this.notes.map(n => n.pitch.replace('/', '').toUpperCase());
+                
+                const detected = Tonal.Chord.detect(pcNotes);
+                if (detected.length > 0) {
+                    document.getElementById('score-analysis-result').textContent = detected[0];
+                } else {
+                    document.getElementById('score-analysis-result').textContent = 'Desconocido';
+                }
+            },
+            
+            playScore() {
+                if (this.notes.length === 0) return;
+                audio.ensureRunning().then(() => {
+                    let timeAcc = 0;
+                    const bpm = document.getElementById('rhythm-bpm') ? parseInt(document.getElementById('rhythm-bpm').value) : 90;
+                    const beatDuration = 60 / bpm; 
+                    
+                    this.notes.forEach(n => {
+                        let len = 1; 
+                        if (n.duration === 'h') len = 2;
+                        if (n.duration === 'w') len = 4;
+                        if (n.duration === '8') len = 0.5;
+                        if (n.duration === '16') len = 0.25;
+                        
+                        const pc = n.pitch.split('/')[0].toUpperCase();
+                        const oct = parseInt(n.pitch.split('/')[1]);
+                        let midiIndex = MusicUtils.noteNames.indexOf(pc);
+                        if(midiIndex === -1 && pc.length > 1) {
+                            // handle flats/sharps if we ever add them
+                            midiIndex = MusicUtils.noteNames.indexOf(pc[0]);
+                        }
+                        const midi = (oct + 1) * 12 + midiIndex;
+                        
+                        setTimeout(() => {
+                            audio.playNote(midi, beatDuration * len, 'piano');
+                        }, timeAcc * 1000);
+                        
+                        timeAcc += beatDuration * len;
+                    });
+                });
+            }
+        };
+
         // --- INICIALIZACIÓN ---
         document.addEventListener('DOMContentLoaded', () => {
             UI.init();
             CAGEDExplorer.init();
             ChordsDictionary.init();
+            ScoreEditor.init();
             RhythmTrainer.init();
             EarTrainer.initNoteConfig();
         });
