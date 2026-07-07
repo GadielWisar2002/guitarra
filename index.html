@@ -282,6 +282,13 @@
                 </select>
             </div>
             <div class="control-group">
+                <label>Modo</label>
+                <select id="scoreInsertMode">
+                    <option value="seq">Sucesivo</option>
+                    <option value="chord">Apilar (Acorde)</option>
+                </select>
+            </div>
+            <div class="control-group">
                 <label>Acorde Detectado</label>
                 <div id="score-analysis-result" style="font-size: 1.5rem; font-weight: bold; color: var(--primary-btn); height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 8px;">---</div>
             </div>
@@ -1494,20 +1501,34 @@
                 
                 let pitch = '';
                 if (this.clef === 'treble') {
-                    const diatonicNotes = ['b/5','a/5','g/5','f/5','e/5','d/5','c/5','b/4','a/4','g/4','f/4','e/4','d/4','c/4','b/3','a/3','g/3'];
-                    let index = 3 + stepsDown;
+                    const diatonicNotes = ['e/6','d/6','c/6','b/5','a/5','g/5','f/5','e/5','d/5','c/5','b/4','a/4','g/4','f/4','e/4','d/4','c/4','b/3','a/3','g/3','f/3','e/3','d/3','c/3'];
+                    let index = 6 + stepsDown;
                     if (index < 0) index = 0;
                     if (index >= diatonicNotes.length) index = diatonicNotes.length - 1;
                     pitch = diatonicNotes[index];
                 } else {
-                    const diatonicNotes = ['d/4','c/4','b/3','a/3','g/3','f/3','e/3','d/3','c/3','b/2','a/2','g/2','f/2','e/2','d/2','c/2','b/1'];
-                    let index = 3 + stepsDown;
+                    const diatonicNotes = ['g/4','f/4','e/4','d/4','c/4','b/3','a/3','g/3','f/3','e/3','d/3','c/3','b/2','a/2','g/2','f/2','e/2','d/2','c/2','b/1','a/1','g/1','f/1','e/1'];
+                    let index = 6 + stepsDown;
                     if (index < 0) index = 0;
                     if (index >= diatonicNotes.length) index = diatonicNotes.length - 1;
                     pitch = diatonicNotes[index];
                 }
                 
-                this.notes.push({ pitch: pitch, duration: this.duration });
+                const mode = document.getElementById('scoreInsertMode').value;
+                if (mode === 'chord' && this.notes.length > 0) {
+                    if (!this.notes[this.notes.length - 1].keys.includes(pitch)) {
+                        this.notes[this.notes.length - 1].keys.push(pitch);
+                        // Sort keys from lowest to highest for VexFlow to render cleanly
+                        this.notes[this.notes.length - 1].keys.sort((a, b) => {
+                            const noteA = a.split('/')[0], octA = parseInt(a.split('/')[1]);
+                            const noteB = b.split('/')[0], octB = parseInt(b.split('/')[1]);
+                            if (octA !== octB) return octA - octB;
+                            return MusicUtils.noteNames.indexOf(noteA.toUpperCase()) - MusicUtils.noteNames.indexOf(noteB.toUpperCase());
+                        });
+                    }
+                } else {
+                    this.notes.push({ keys: [pitch], duration: this.duration });
+                }
                 this.render();
             },
             
@@ -1522,27 +1543,33 @@
                 if (this.notes.length === 0) return;
                 
                 const staveNotes = this.notes.map(n => {
-                    return new this.VF.StaveNote({ clef: this.clef, keys: [n.pitch], duration: n.duration });
+                    return new this.VF.StaveNote({ clef: this.clef, keys: n.keys, duration: n.duration });
                 });
                 
                 const voice = new this.VF.Voice({ num_beats: 4, beat_value: 4 });
                 voice.setStrict(false);
                 voice.addTickables(staveNotes);
                 
+                const beams = this.VF.Beam.generateBeams(staveNotes);
+                
                 new this.VF.Formatter().joinVoices([voice]).format([voice], 400);
                 voice.draw(this.context, this.stave);
+                beams.forEach(b => b.setContext(this.context).draw());
             },
             
             analyzeMeasure() {
-                if (this.notes.length === 0 || typeof Tonal === 'undefined') {
+                if (this.notes.length === 0 || typeof window.Tonal === 'undefined') {
                     document.getElementById('score-analysis-result').textContent = 'Vacío';
                     return;
                 }
                 
-                // Convertir de formato VexFlow (ej. 'c/4') a Tonal (ej. 'C4')
-                const pcNotes = this.notes.map(n => n.pitch.replace('/', '').toUpperCase());
+                let allKeys = [];
+                this.notes.forEach(n => allKeys.push(...n.keys));
                 
-                const detected = Tonal.Chord.detect(pcNotes);
+                // Convertir de formato VexFlow (ej. 'c/4') a Tonal (ej. 'C4')
+                const pcNotes = allKeys.map(k => k.replace('/', '').toUpperCase());
+                
+                const detected = window.Tonal.Chord.detect(pcNotes);
                 if (detected.length > 0) {
                     document.getElementById('score-analysis-result').textContent = detected[0];
                 } else {
@@ -1564,18 +1591,19 @@
                         if (n.duration === '8') len = 0.5;
                         if (n.duration === '16') len = 0.25;
                         
-                        const pc = n.pitch.split('/')[0].toUpperCase();
-                        const oct = parseInt(n.pitch.split('/')[1]);
-                        let midiIndex = MusicUtils.noteNames.indexOf(pc);
-                        if(midiIndex === -1 && pc.length > 1) {
-                            // handle flats/sharps if we ever add them
-                            midiIndex = MusicUtils.noteNames.indexOf(pc[0]);
-                        }
-                        const midi = (oct + 1) * 12 + midiIndex;
-                        
-                        setTimeout(() => {
-                            audio.playNote(midi, beatDuration * len, 'piano');
-                        }, timeAcc * 1000);
+                        n.keys.forEach(key => {
+                            const pc = key.split('/')[0].toUpperCase();
+                            const oct = parseInt(key.split('/')[1]);
+                            let midiIndex = MusicUtils.noteNames.indexOf(pc);
+                            if(midiIndex === -1 && pc.length > 1) {
+                                midiIndex = MusicUtils.noteNames.indexOf(pc[0]);
+                            }
+                            const midi = (oct + 1) * 12 + midiIndex;
+                            
+                            setTimeout(() => {
+                                audio.playNote(midi, beatDuration * len, 'piano');
+                            }, timeAcc * 1000);
+                        });
                         
                         timeAcc += beatDuration * len;
                     });
