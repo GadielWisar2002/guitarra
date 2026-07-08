@@ -1561,7 +1561,12 @@
                 if (this.notes.length === 0) return;
                 
                 const staveNotes = this.notes.map(n => {
-                    return new this.VF.StaveNote({ clef: this.clef, keys: n.keys, duration: n.duration });
+                    const note = new this.VF.StaveNote({ clef: this.clef, keys: n.keys, duration: n.duration });
+                    n.keys.forEach(k => {
+                        const txt = k.replace('/', '').toUpperCase();
+                        note.addModifier(new this.VF.Annotation(txt).setVerticalJustification(this.VF.Annotation.VerticalJustify.TOP));
+                    });
+                    return note;
                 });
                 
                 const voice = new this.VF.Voice({ num_beats: 4, beat_value: 4 });
