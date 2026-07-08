@@ -1555,6 +1555,31 @@
                 this.context.clear();
                 
                 this.stave = new this.VF.Stave(10, 40, 500);
+                
+                // Draw faint reference lines (ledger lines) across the stave width
+                const ctx = this.context;
+                ctx.save();
+                ctx.setStrokeStyle('#e8e8e8');
+                ctx.setLineWidth(1);
+                ctx.beginPath();
+                const yTop = this.stave.getYForLine(0);
+                const lineSpace = this.stave.getSpacingBetweenLines();
+                
+                // Lines above (-1 to -4)
+                for (let i = -4; i < 0; i++) {
+                    const y = yTop + i * lineSpace;
+                    ctx.moveTo(10, y);
+                    ctx.lineTo(510, y);
+                }
+                // Lines below (5 to 10)
+                for (let i = 5; i <= 10; i++) {
+                    const y = yTop + i * lineSpace;
+                    ctx.moveTo(10, y);
+                    ctx.lineTo(510, y);
+                }
+                ctx.stroke();
+                ctx.restore();
+                
                 this.stave.addClef(this.clef).addTimeSignature("4/4");
                 this.stave.setContext(this.context).draw();
                 
