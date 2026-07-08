@@ -289,8 +289,11 @@
                 </select>
             </div>
             <div class="control-group">
-                <label>Acorde Detectado</label>
-                <div id="score-analysis-result" style="font-size: 1.5rem; font-weight: bold; color: var(--primary-btn); height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 8px;">---</div>
+                <label>Registro / Acorde</label>
+                <div style="font-size: 1rem; font-weight: bold; color: var(--primary-btn); height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 5px;">
+                    <div id="score-last-note" style="color: #aaa;">Última Nota: ---</div>
+                    <div id="score-analysis-result" style="font-size: 1.5rem; color: #fff;">---</div>
+                </div>
             </div>
         </div>
         
@@ -1477,6 +1480,22 @@
                     this.context = this.renderer.getContext();
                     
                     div.addEventListener('click', (e) => this.handleCanvasClick(e));
+                    div.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        if (this.notes.length === 0) return;
+                        const mode = document.getElementById('scoreInsertMode').value;
+                        if (mode === 'chord') {
+                            const lastNote = this.notes[this.notes.length - 1];
+                            if (lastNote.keys.length > 1) {
+                                lastNote.keys.pop();
+                            } else {
+                                this.notes.pop();
+                            }
+                        } else {
+                            this.notes.pop();
+                        }
+                        this.render();
+                    });
                     this.render();
                 }
             },
@@ -1486,7 +1505,6 @@
             
             clearScore() {
                 this.notes = [];
-                document.getElementById('score-analysis-result').textContent = '---';
                 this.render();
             },
             
@@ -1555,16 +1573,23 @@
                 new this.VF.Formatter().joinVoices([voice]).format([voice], 400);
                 voice.draw(this.context, this.stave);
                 beams.forEach(b => b.setContext(this.context).draw());
+                this.analyzeMeasure();
             },
             
             analyzeMeasure() {
                 if (this.notes.length === 0 || typeof window.Tonal === 'undefined') {
-                    document.getElementById('score-analysis-result').textContent = 'Vacío';
+                    document.getElementById('score-analysis-result').textContent = '---';
+                    document.getElementById('score-last-note').textContent = 'Última Nota: ---';
                     return;
                 }
                 
                 let allKeys = [];
                 this.notes.forEach(n => allKeys.push(...n.keys));
+                
+                const lastKey = allKeys[allKeys.length - 1];
+                if (lastKey) {
+                    document.getElementById('score-last-note').textContent = 'Última Nota: ' + lastKey.replace('/', '').toUpperCase();
+                }
                 
                 // Convertir de formato VexFlow (ej. 'c/4') a Tonal (ej. 'C4')
                 const pcNotes = allKeys.map(k => k.replace('/', '').toUpperCase());
@@ -1573,7 +1598,7 @@
                 if (detected.length > 0) {
                     document.getElementById('score-analysis-result').textContent = detected[0];
                 } else {
-                    document.getElementById('score-analysis-result').textContent = 'Desconocido';
+                    document.getElementById('score-analysis-result').textContent = '---';
                 }
             },
             
