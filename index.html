@@ -1601,6 +1601,13 @@
                 
                 const detected = window.Tonal.Chord.detect(pcNotes);
                 if (detected.length > 0) {
+                    const score = (chordName) => {
+                        const base = chordName.split('/')[0];
+                        let val = base.length;
+                        if (base.includes('#5') || base.includes('b5') || base.includes('sus')) val += 10;
+                        return val;
+                    };
+                    detected.sort((a, b) => score(a) - score(b));
                     document.getElementById('score-analysis-result').textContent = detected[0];
                 } else {
                     document.getElementById('score-analysis-result').textContent = '---';
