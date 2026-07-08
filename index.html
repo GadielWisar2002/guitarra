@@ -297,6 +297,24 @@
             </div>
         </div>
         
+        <div class="tab-content controls-grid" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+            <div class="control-group">
+                <label>Generador: Acorde</label>
+                <select id="score-gen-root"></select>
+            </div>
+            <div class="control-group">
+                <label>Tipo</label>
+                <select id="score-gen-type"></select>
+            </div>
+            <div class="control-group">
+                <label>Inversión</label>
+                <select id="score-gen-inv"></select>
+            </div>
+            <div class="control-group" style="justify-content: flex-end;">
+                <button class="primary-btn" onclick="ScoreEditor.insertChordFromGenerator()" style="padding: 10px; width:100%;">➕ Insertar Acorde</button>
+            </div>
+        </div>
+        
         <div id="score-panel" class="tab-content" style="flex-direction: column; align-items: center; gap: 20px;">
             <div class="btn-group" style="margin-bottom: 20px;">
                 <button class="primary-btn" onclick="ScoreEditor.playScore()">▶️ Reproducir</button>
@@ -1496,8 +1514,58 @@
                         }
                         this.render();
                     });
+                    
+                    const sgr = document.getElementById('score-gen-root');
+                    if (sgr) {
+                        MusicUtils.noteNames.forEach((n, i) => {
+                            const opt = document.createElement('option'); opt.value = i; opt.textContent = n; sgr.appendChild(opt);
+                        });
+                        const sgt = document.getElementById('score-gen-type');
+                        Object.keys(ChordsDictionary.types).forEach(k => {
+                            const opt = document.createElement('option'); opt.value = k; opt.textContent = ChordsDictionary.types[k].label; sgt.appendChild(opt);
+                        });
+                        const sgi = document.getElementById('score-gen-inv');
+                        const updateScoreInv = () => {
+                            sgi.innerHTML = '';
+                            const type = sgt.value;
+                            const numNotes = ChordsDictionary.types[type].intervals.length;
+                            const invLabels = ['Fundamental', '1ra Inversión', '2da Inversión', '3ra Inversión'];
+                            for(let i=0; i < numNotes; i++) {
+                                const opt = document.createElement('option'); opt.value = i; opt.textContent = invLabels[i]; sgi.appendChild(opt);
+                            }
+                        };
+                        sgt.addEventListener('change', updateScoreInv);
+                        updateScoreInv();
+                    }
+                    
                     this.render();
                 }
+            },
+            
+            insertChordFromGenerator() {
+                const rIdx = parseInt(document.getElementById('score-gen-root').value);
+                const type = document.getElementById('score-gen-type').value;
+                const inv = parseInt(document.getElementById('score-gen-inv').value);
+                
+                const intervals = ChordsDictionary.types[type].intervals;
+                let voicing = [];
+                let baseMidi = 48 + rIdx; // C3 + root
+                
+                intervals.forEach(i => voicing.push(baseMidi + i));
+                
+                for(let i=0; i < inv; i++) {
+                    voicing[i] += 12;
+                }
+                voicing.sort((a,b) => a - b);
+                
+                const keys = voicing.map(midi => {
+                    const pc = MusicUtils.noteNames[midi % 12].toLowerCase();
+                    const oct = Math.floor(midi / 12) - 1;
+                    return pc + '/' + oct;
+                });
+                
+                this.notes.push({ keys: keys, duration: this.duration });
+                this.render();
             },
             
             setClef(c) { this.clef = c; this.render(); },
